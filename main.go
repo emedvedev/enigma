@@ -2,55 +2,8 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
-
-type Rotor struct {
-	StraightPairs           map[rune]rune
-	ReversePairs            map[rune]rune
-	Turnover, Window, Notch []rune
-}
-
-var baseSequence = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func NewRotor(sequence string, turnover, window, notch []rune) *Rotor {
-	rotor := &Rotor{Turnover: turnover, Window: window, Notch: notch}
-	rotor.StraightPairs = make(map[rune]rune, len(sequence))
-	rotor.ReversePairs = make(map[rune]rune, len(sequence))
-	for i, letter := range sequence {
-		rotor.StraightPairs[rune(baseSequence[i])] = letter
-		rotor.ReversePairs[letter] = rune(baseSequence[i])
-	}
-	return rotor
-}
-
-func (r *Rotor) Step(letter *rune, invert bool) rune {
-	if invert {
-		*letter = r.ReversePairs[*letter]
-	} else {
-		*letter = r.StraightPairs[*letter]
-	}
-	fmt.Print(string(*letter))
-	return *letter
-}
-
-type Reflector struct {
-	Pairs map[rune]rune
-}
-
-func NewReflector(sequence string) *Reflector {
-	reflector := &Reflector{}
-	reflector.Pairs = make(map[rune]rune, len(sequence))
-	for i, letter := range sequence {
-		reflector.Pairs[letter] = rune(baseSequence[i])
-	}
-	return reflector
-}
-
-func (r *Reflector) Reflect(letter *rune) rune {
-	*letter = r.Pairs[*letter]
-	fmt.Print(string(*letter))
-	return *letter
-}
 
 var Rotors = map[string]Rotor{
 	"I":     *NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", []rune{'R'}, []rune{'Q'}, []rune{'Y'}),
@@ -73,12 +26,67 @@ var Reflectors = map[string]Reflector{
 	"C Thin": *NewReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ"),
 }
 
+type Rotor struct {
+	Sequence                string
+	StraightPairs           [26][2]rune
+	ReversePairs            [26][2]rune
+	Offset                  int
+	Turnover, Window, Notch []rune
+}
+
+var baseSequence = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func NewRotor(sequence string, turnover, window, notch []rune) *Rotor {
+	rotor := &Rotor{Turnover: turnover, Window: window, Notch: notch, Sequence: sequence}
+	for i, letter := range sequence {
+		rotor.StraightPairs[i] = [2]rune{rune(baseSequence[i]), letter}
+		rotor.ReversePairs[i] = [2]rune{letter, rune(baseSequence[i])}
+	}
+	return rotor
+}
+
+func (r *Rotor) Step(letter *rune, invert bool) rune {
+	if invert {
+		*letter = rune(baseSequence[(strings.IndexRune(baseSequence, *letter)+r.Offset+26)%26])
+		index := (strings.IndexRune(r.Sequence, *letter) - r.Offset + 26) % 26
+		*letter = rune(baseSequence[index])
+	} else {
+		index := (strings.IndexRune(baseSequence, *letter) + r.Offset + 26) % 26
+		*letter = rune(baseSequence[(strings.IndexByte(baseSequence, r.Sequence[index])-r.Offset+26)%26])
+	}
+	//fmt.Print(string(*letter))
+	return *letter
+}
+
+type Reflector struct {
+	Pairs map[rune]rune
+}
+
+func NewReflector(sequence string) *Reflector {
+	reflector := &Reflector{}
+	reflector.Pairs = make(map[rune]rune, len(sequence))
+	for i, letter := range sequence {
+		reflector.Pairs[letter] = rune(baseSequence[i])
+	}
+	return reflector
+}
+
+func (r *Reflector) Reflect(letter *rune) rune {
+	*letter = r.Pairs[*letter]
+	return *letter
+}
+
 type Enigma struct {
 	rotors    []Rotor
 	reflector Reflector
 }
 
+func (e *Enigma) MoveRotors() {
+	e.rotors[2].Offset++
+}
+
 func (e *Enigma) EncryptChar(letter *rune) rune {
+	e.MoveRotors()
 	for i := len(e.rotors) - 1; i >= 0; i-- {
 		e.rotors[i].Step(letter, false)
 	}
@@ -89,19 +97,24 @@ func (e *Enigma) EncryptChar(letter *rune) rune {
 	return *letter
 }
 
-func NewEnigma(rotorIDs []string, reflectorID string) *Enigma {
-	rotors := make([]Rotor, len(rotorIDs))
-	for i, name := range rotorIDs {
-		rotors[i] = Rotors[name]
+func NewEnigma(rotorConfigurations [][]string, reflectorID string) *Enigma {
+	rotors := make([]Rotor, len(rotorConfigurations))
+	for i, configuration := range rotorConfigurations {
+		rotors[i] = Rotors[configuration[0]]
+		rotors[i].Offset = strings.IndexRune(baseSequence, rune(configuration[1][0]))
 	}
 	return &Enigma{rotors, Reflectors[reflectorID]}
 }
 
 func main() {
-	enigma := NewEnigma([]string{"I", "II", "III"}, "B")
+	enigma := NewEnigma([][]string{{"III", "A"}, {"II", "A"}, {"I", "A"}}, "B")
 
-	letter := 'G'
-	fmt.Print(string(letter))
+	plaintext := "HELLOWORLD"
+	fmt.Println(plaintext)
 
-	enigma.EncryptChar(&letter)
+	for index := range plaintext {
+		char := rune(plaintext[index])
+		enigma.EncryptChar(&char)
+		fmt.Print(string(char))
+	}
 }
