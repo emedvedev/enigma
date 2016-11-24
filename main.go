@@ -10,7 +10,6 @@ import (
 )
 
 // TODO: tests
-// TODO: make rings work
 // TODO: readme and docs
 // TODO: CLI
 // http://people.physik.hu-berlin.de/~palloks/js/enigma/enigma-u_v20_en.html
@@ -90,7 +89,7 @@ func main() {
 		for index := range plaintext {
 			char := rune(plaintext[index])
 			enigma.EncryptChar(&char)
-			fmt.Print(string(char), "  ")
+			fmt.Print(string(char))
 		}
 		return nil
 	}

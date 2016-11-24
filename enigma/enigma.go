@@ -12,7 +12,7 @@ type Enigma struct {
 }
 
 func (e *Enigma) MoveRotors() {
-	rotate := make([]int, len(e.rotors))
+	rotate := make(map[int]int, len(e.rotors))
 	rotate[len(e.rotors)-1] = 1
 
 	if e.rotors[len(e.rotors)-1].notch[alphabet.IntToChar((e.rotors[len(e.rotors)-1].offset+26)%26)] {
@@ -30,6 +30,7 @@ func (e *Enigma) MoveRotors() {
 
 func (e *Enigma) EncryptChar(letter *rune) {
 	e.MoveRotors()
+
 	if value, ok := e.plugboard[*letter]; ok {
 		*letter = value
 	}
@@ -43,13 +44,15 @@ func (e *Enigma) EncryptChar(letter *rune) {
 	if value, ok := e.plugboard[*letter]; ok {
 		*letter = value
 	}
+
 }
 
 func NewEnigma(rotorConfiguration []RotorConfig, reflectorID string, plugboardConfiguration [][2]rune) *Enigma {
 	rotors := make([]Rotor, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
 		rotors[i] = Rotors[configuration.ID]
-		rotors[i].offset = strings.IndexRune(alphabet.Alphabet, configuration.Start) - configuration.Ring + 1
+		rotors[i].offset = strings.IndexRune(alphabet.Alphabet, configuration.Start)
+		rotors[i].ring = configuration.Ring - 1
 	}
 	plugboard := map[rune]rune{}
 	for _, pair := range plugboardConfiguration {
