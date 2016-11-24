@@ -12,6 +12,7 @@ import (
 // TODO: tests
 // TODO: readme and docs
 // TODO: CLI
+// TODO: transform plaintext
 // http://people.physik.hu-berlin.de/~palloks/js/enigma/enigma-u_v20_en.html
 func main() {
 
@@ -69,28 +70,18 @@ func main() {
 			config[index] = enigma.RotorConfig{rotor, value, ring}
 		}
 
-		mappedPlugboard := make([][2]rune, len(plugboard))
-
-		for index, pair := range plugboard {
-			if len(pair) > 0 {
-				mappedPlugboard[index] = [2]rune{rune(pair[0]), rune(pair[1])}
-			}
-		}
-
 		plaintext := c.Args().Get(0)
 		fmt.Println("Your text: ", plaintext)
 
-		enigma := enigma.NewEnigma(
+		e := enigma.NewEnigma(
 			config,
 			c.String("reflector"),
-			mappedPlugboard,
+			plugboard,
 		)
-		fmt.Print("Encrypted: ")
-		for index := range plaintext {
-			char := rune(plaintext[index])
-			enigma.EncryptChar(&char)
-			fmt.Print(string(char))
-		}
+		encrypted := e.EncryptString(plaintext)
+
+		fmt.Print("Encrypted: ", encrypted)
+
 		return nil
 	}
 
