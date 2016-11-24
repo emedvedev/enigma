@@ -39,7 +39,7 @@ func NewPlugboard(pairs ...string) *Plugboard {
 }
 
 func (e *Enigma) moveRotors() {
-	rotate := make(map[int]int, len(e.rotors))
+	var rotate = make(map[int]int, len(e.rotors))
 	rotate[len(e.rotors)-1] = 1
 	if e.rotors[len(e.rotors)-1].notch[ToChar((e.rotors[len(e.rotors)-1].offset+26)%26)] {
 		rotate[len(e.rotors)-2] = 1
@@ -49,7 +49,8 @@ func (e *Enigma) moveRotors() {
 		rotate[len(e.rotors)-3] = 1
 	}
 	for rotor, offset := range rotate {
-		e.rotors[rotor].offset += offset
+		var newOffset = (e.rotors[rotor].offset + offset + 26) % 26
+		e.rotors[rotor].offset = newOffset
 	}
 }
 
