@@ -1,127 +1,118 @@
 package main
 
 import (
-	"github.com/urfave/cli"
+	"fmt"
+	"github.com/mkideal/cli"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 )
 
-var outputTemplate, _ = template.New("enigma-cli").Parse(`
-Enigma configuration
--------------------------
-Rotors: {{ .Context.GlobalString "rotors" }}
-Rings: {{ .Context.GlobalString "rings" }}
-Plugboard: {{ or (.Context.GlobalString "plugboard") ("empty") }}
-Rotor position: {{ .Context.GlobalString "position" }}
-Reflector: {{ .Context.GlobalString "reflector" }}
-=========================
-{{- if ne (.Plain) (.Original) }}
+const DESCRIPTION = `
+usage: enigma <text> [--rotors=I II III] [--rings=3 4 3] [--reflector=C]
+                     [--plugboard=AB CD] [--position=A A A]
 
-Original plaintext
--------------------------
-{{ .Original }}
-=========================
-{{- end }}
+Enigma cipher machine simulator
+
+Encrypt or decrypt text using this configurable Enigma simulation:
+it fully supports both M3 and M4, as well as some older models.
+You are free to pick a rotor set, configure rings and starting
+positions of the rotors, choose from a variety of reflectors and
+mess with the plugboard.
+
+Enjoy!
+`
+
+const OUTPUT = `
+Enigma configuration
+--------------------------------------------------
+Rotors: {{ .Args.Rotors }}
+Rotor positions: {{ .Args.Position }}
+Rings: {{ .Args.Rings }}
+Plugboard: {{ or (.Args.Plugboard) ("empty") }}
+Reflector: {{ .Args.Reflector }}
+==================================================
 
 Plaintext
--------------------------
+--------------------------------------------------
+{{ .Original }}
+==================================================
+{{ if ne (.Plain) (.Original) }}
+Modified plaintext
+--------------------------------------------------
 {{ .Plain }}
-=========================
-
+==================================================
+{{ end }}
 Result
--------------------------
+--------------------------------------------------
 {{ .Encrypted }}
-=========================
+==================================================
 
-`)
+`
 
-func EnigmaApp() *cli.App {
+type CLIOpts struct {
+	Help      bool     `cli:"!h,help" usage:"Show help."`
+	Rotors    []string `cli:"rotors" name:"I II III" usage:"Rotor configuration. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma."`
+	Rings     []int    `cli:"rings" name:"3 4 3" usage:"Each rotor ring can be shifted: 1 is the default location, 26 is the maximum."`
+	Plugboard []string `cli:"plugboard" name:"AB CD" usage:"Optional plugboard pairs. Letters must be unique across the plugboard."`
+	Position  []string `cli:"position" name:"A A A" usage:"Starting position, A-Z for each rotor."`
+	Reflector string   `cli:"reflector" name:"C" usage:"Reflector. Supported: A, B, C, B-Thin, C-Thin."`
+}
 
-	var rotors, rings, plugboard, position, reflector string
+func (argv *CLIOpts) Validate(ctx *cli.Context) error {
 
-	var App = cli.NewApp()
-	App.Name = "enigma"
-	App.Usage = "Encrypt or decrypt text using a given Enigma configuration."
-	App.Version = "0.1.0"
-	App.UsageText = `enigma <text to encrypt/decrypt> [--rotors "I II III"] [--rings "1 1 1"] [--plugboard "AB CD"] [--position "A A A"] [--reflector C]`
-	App.HideVersion = true
-	App.Authors = []cli.Author{
-		cli.Author{
-			Name:  "Edward Medvedev",
-			Email: "edward.medvedev@gmail.com",
-		},
-	}
-	App.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:        "rotors",
-			Value:       "I II III",
-			Usage:       "Rotor configuration. Pre-defined rotors: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma",
-			Destination: &rotors,
-		},
-		cli.StringFlag{
-			Name:        "rings",
-			Value:       "1 1 1",
-			Usage:       "Ring configuration, 1-26 for each rotor",
-			Destination: &rings,
-		},
-		cli.StringFlag{
-			Name:        "plugboard",
-			Value:       "",
-			Usage:       "Optional plugboard pairs",
-			Destination: &plugboard,
-		},
-		cli.StringFlag{
-			Name:        "position",
-			Value:       "A A A",
-			Usage:       "Starting position, A-Z for each rotor",
-			Destination: &position,
-		},
-		cli.StringFlag{
-			Name:        "reflector",
-			Value:       "C",
-			Usage:       "Reflector. Supported: A, B, `C`, B-Thin, C-Thin",
-			Destination: &reflector,
-		},
+	for _, char := range argv.Position {
+		if matched, _ := regexp.MatchString(`^[A-Z]$`, char); !matched {
+			return fmt.Errorf("Rotor positions should be single letters in the A-Z range.")
+		}
 	}
 
-	App.Action = cli.ActionFunc(
-		func(c *cli.Context) error {
+	if !(len(argv.Rotors) == len(argv.Position) && len(argv.Position) == len(argv.Rings)) {
+		return fmt.Errorf("You should configure equal number of rotors, rings, and position settings.")
+	}
 
-			splitRotors := strings.Split(rotors, " ")
-			splitRings := strings.Split(rings, " ")
-			splitPosition := strings.Split(position, " ")
+	for _, ring := range argv.Rings {
+		if ring < 1 || ring > 26 {
+			return fmt.Errorf("Ring out of range! Must be in the range of 1-26.")
+		}
+	}
 
-			allowedRegexp := regexp.MustCompile(`[^A-Z]`)
-			originalPlaintext := strings.Join(c.Args(), " ")
-			plaintext := strings.TrimSpace(originalPlaintext)
-			plaintext = strings.Replace(plaintext, " ", "X", -1)
-			plaintext = strings.ToUpper(plaintext)
-			plaintext = allowedRegexp.ReplaceAllString(plaintext, "")
+	return nil
+}
 
-			config := make([]RotorConfig, len(splitRotors))
-			for index, rotor := range splitRotors {
-				ring, _ := strconv.Atoi(splitRings[index])
-				value := rune(splitPosition[index][0])
-				config[index] = RotorConfig{rotor, value, ring}
-			}
-			e := NewEnigma(
-				config,
-				c.String("reflector"),
-				strings.Split(plugboard, " "),
-			)
-			encrypted := e.EncryptString(plaintext)
-			outputTemplate.Execute(os.Stdout, struct {
-				Context   *cli.Context
-				Original  string
-				Plain     string
-				Encrypted string
-			}{c, originalPlaintext, plaintext, encrypted})
+func EnigmaCLI() {
 
+	cli.SetUsageStyle(cli.DenseManualStyle)
+	cli.Run(new(CLIOpts), func(ctx *cli.Context) error {
+		argv := ctx.Argv().(*CLIOpts)
+		if argv.Help {
+			com := ctx.Command()
+			com.Text = DESCRIPTION
+			ctx.String(com.Usage(ctx))
 			return nil
-		})
+		}
 
-	return App
+		originalPlaintext := strings.Join(ctx.Args(), " ")
+		plaintext := SanitizePlaintext(originalPlaintext)
+
+		config := make([]RotorConfig, len(argv.Rotors))
+		for index, rotor := range argv.Rotors {
+			ring := argv.Rings[index]
+			value := rune(argv.Position[index][0])
+			config[index] = RotorConfig{rotor, value, ring}
+		}
+
+		e := NewEnigma(config, argv.Reflector, argv.Plugboard)
+		encrypted := e.EncryptString(plaintext)
+
+		tmpl, _ := template.New("cli").Parse(OUTPUT)
+		tmpl.Execute(os.Stdout, struct {
+			Original, Plain, Encrypted string
+			Args                       *CLIOpts
+		}{originalPlaintext, plaintext, encrypted, argv})
+
+		return nil
+	})
+
 }
