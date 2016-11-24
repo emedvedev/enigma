@@ -2,119 +2,98 @@ package main
 
 import (
 	"fmt"
+	"github.com/emedvedev/enigma/enigma"
+	"github.com/urfave/cli"
+	"os"
+	"strconv"
 	"strings"
 )
 
-var Rotors = map[string]Rotor{
-	"I":     *NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", []rune{'R'}, []rune{'Q'}, []rune{'Y'}),
-	"II":    *NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", []rune{'F'}, []rune{'E'}, []rune{'M'}),
-	"III":   *NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", []rune{'W'}, []rune{'V'}, []rune{'D'}),
-	"IV":    *NewRotor("ESOVPZJAYQUIRHXLNFTGKDCMWB", []rune{'K'}, []rune{'J'}, []rune{'R'}),
-	"V":     *NewRotor("VZBRGITYUPSDNHLXAWMJQOFECK", []rune{'A'}, []rune{'Z'}, []rune{'H'}),
-	"VI":    *NewRotor("JPGVOUMFYQBENHZRDKASXLICTW", []rune{'A', 'N'}, []rune{'Z', 'M'}, []rune{'H', 'U'}),
-	"VII":   *NewRotor("NZJHGRCXMYSWBOUFAIVLPEKQDT", []rune{'A', 'N'}, []rune{'Z', 'M'}, []rune{'H', 'U'}),
-	"VIII":  *NewRotor("FKQHTLXOCBJSPDZRAMEWNIUYGV", []rune{'A', 'N'}, []rune{'Z', 'M'}, []rune{'H', 'U'}),
-	"Beta":  *NewRotor("LEYJVCNIXWPBQMDRTAKZGFUHOS", []rune{}, []rune{}, []rune{}),
-	"Gamma": *NewRotor("FSOKANUERHMBTIYCWLQPZXVGJD", []rune{}, []rune{}, []rune{}),
-}
-
-var Reflectors = map[string]Reflector{
-	"A":      *NewReflector("EJMZALYXVBWFCRQUONTSPIKHGD"),
-	"B":      *NewReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT"),
-	"C":      *NewReflector("FVPJIAOYEDRZXWGCTKUQSBNMHL"),
-	"B Thin": *NewReflector("ENKQAUYWJICOPBLMDXZVFTHRGS"),
-	"C Thin": *NewReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ"),
-}
-
-type Rotor struct {
-	Sequence                string
-	StraightPairs           [26][2]rune
-	ReversePairs            [26][2]rune
-	Offset                  int
-	Turnover, Window, Notch []rune
-}
-
-var baseSequence = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func NewRotor(sequence string, turnover, window, notch []rune) *Rotor {
-	rotor := &Rotor{Turnover: turnover, Window: window, Notch: notch, Sequence: sequence}
-	for i, letter := range sequence {
-		rotor.StraightPairs[i] = [2]rune{rune(baseSequence[i]), letter}
-		rotor.ReversePairs[i] = [2]rune{letter, rune(baseSequence[i])}
-	}
-	return rotor
-}
-
-func (r *Rotor) Step(letter *rune, invert bool) rune {
-	if invert {
-		*letter = rune(baseSequence[(strings.IndexRune(baseSequence, *letter)+r.Offset+26)%26])
-		index := (strings.IndexRune(r.Sequence, *letter) - r.Offset + 26) % 26
-		*letter = rune(baseSequence[index])
-	} else {
-		index := (strings.IndexRune(baseSequence, *letter) + r.Offset + 26) % 26
-		*letter = rune(baseSequence[(strings.IndexByte(baseSequence, r.Sequence[index])-r.Offset+26)%26])
-	}
-	//fmt.Print(string(*letter))
-	return *letter
-}
-
-type Reflector struct {
-	Pairs map[rune]rune
-}
-
-func NewReflector(sequence string) *Reflector {
-	reflector := &Reflector{}
-	reflector.Pairs = make(map[rune]rune, len(sequence))
-	for i, letter := range sequence {
-		reflector.Pairs[letter] = rune(baseSequence[i])
-	}
-	return reflector
-}
-
-func (r *Reflector) Reflect(letter *rune) rune {
-	*letter = r.Pairs[*letter]
-	return *letter
-}
-
-type Enigma struct {
-	rotors    []Rotor
-	reflector Reflector
-}
-
-func (e *Enigma) MoveRotors() {
-	e.rotors[2].Offset++
-}
-
-func (e *Enigma) EncryptChar(letter *rune) rune {
-	e.MoveRotors()
-	for i := len(e.rotors) - 1; i >= 0; i-- {
-		e.rotors[i].Step(letter, false)
-	}
-	e.reflector.Reflect(letter)
-	for i := 0; i < len(e.rotors); i++ {
-		e.rotors[i].Step(letter, true)
-	}
-	return *letter
-}
-
-func NewEnigma(rotorConfigurations [][]string, reflectorID string) *Enigma {
-	rotors := make([]Rotor, len(rotorConfigurations))
-	for i, configuration := range rotorConfigurations {
-		rotors[i] = Rotors[configuration[0]]
-		rotors[i].Offset = strings.IndexRune(baseSequence, rune(configuration[1][0]))
-	}
-	return &Enigma{rotors, Reflectors[reflectorID]}
-}
-
+// TODO: tests
+// TODO: make rings work
+// TODO: readme and docs
+// TODO: CLI
+// http://people.physik.hu-berlin.de/~palloks/js/enigma/enigma-u_v20_en.html
 func main() {
-	enigma := NewEnigma([][]string{{"III", "A"}, {"II", "A"}, {"I", "A"}}, "B")
 
-	plaintext := "HELLOWORLD"
-	fmt.Println(plaintext)
-
-	for index := range plaintext {
-		char := rune(plaintext[index])
-		enigma.EncryptChar(&char)
-		fmt.Print(string(char))
+	app := cli.NewApp()
+	app.Name = "enigma"
+	app.Usage = "Encrypt text using a given Enigma configuration."
+	app.Version = "0.1.0"
+	app.Authors = []cli.Author{
+		cli.Author{
+			Name:  "Edward Medvedev",
+			Email: "edward.medvedev@gmail.com",
+		},
 	}
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "rotors",
+			Usage: "Rotor configuration: 3 for M3 emulation, 4 for M4 emulation. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma.",
+		},
+		cli.StringFlag{
+			Name:  "rings",
+			Usage: "Ring configuration, 1-26 for each rotor.",
+		},
+		cli.StringFlag{
+			Name:  "values",
+			Usage: "Ring configuration, 1-26 for each rotor.",
+		},
+		cli.StringFlag{
+			Name:  "reflector",
+			Value: "C",
+			Usage: "Reflector. Supported: A, B, `C`, B-Thin, C-Thin",
+		},
+		cli.StringFlag{
+			Name:  "plugboard",
+			Usage: "Optional plugboard pairs: `\"AB,CD,EF\"`, etc.",
+		},
+	}
+	app.Action = func(c *cli.Context) error {
+
+		rotors := strings.Split(c.String("rotors"), ",")
+		rings := strings.Split(c.String("rings"), ",")
+		values := strings.Split(c.String("values"), ",")
+		plugboard := strings.Split(c.String("plugboard"), ",")
+		reflector := c.String("reflector")
+
+		fmt.Println("Rotors: ", rotors)
+		fmt.Println("Rings: ", rings)
+		fmt.Println("Starting values: ", values)
+		fmt.Println("Plugboard: ", plugboard)
+		fmt.Println("Reflector: ", reflector)
+
+		config := make([]enigma.RotorConfig, len(rotors))
+		for index, rotor := range rotors {
+			ring, _ := strconv.Atoi(rings[index])
+			value := rune(values[index][0])
+			config[index] = enigma.RotorConfig{rotor, value, ring}
+		}
+
+		mappedPlugboard := make([][2]rune, len(plugboard))
+
+		for index, pair := range plugboard {
+			if len(pair) > 0 {
+				mappedPlugboard[index] = [2]rune{rune(pair[0]), rune(pair[1])}
+			}
+		}
+
+		plaintext := c.Args().Get(0)
+		fmt.Println("Your text: ", plaintext)
+
+		enigma := enigma.NewEnigma(
+			config,
+			c.String("reflector"),
+			mappedPlugboard,
+		)
+		fmt.Print("Encrypted: ")
+		for index := range plaintext {
+			char := rune(plaintext[index])
+			enigma.EncryptChar(&char)
+			fmt.Print(string(char), "  ")
+		}
+		return nil
+	}
+
+	app.Run(os.Args)
 }
