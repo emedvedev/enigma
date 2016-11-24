@@ -1,4 +1,4 @@
-package alphabet
+package main
 
 // ToInt returns the alphabet index of a given letter.
 func ToInt(char rune) int {

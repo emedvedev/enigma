@@ -1,8 +1,4 @@
-package enigma
-
-import (
-	abc "github.com/emedvedev/enigma/alphabet"
-)
+package main
 
 // Enigma represents an Enigma machine with configured rotors, plugs,
 // and a reflector. Most states are stored in the rotors themselves.
@@ -19,7 +15,7 @@ func NewEnigma(rotorConfiguration []RotorConfig, reflectorID string, plugs []str
 	rotors := make([]Rotor, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
 		rotors[i] = Rotors[configuration.ID]
-		rotors[i].offset = abc.ToInt(configuration.Start)
+		rotors[i].offset = ToInt(configuration.Start)
 		rotors[i].ring = configuration.Ring - 1
 	}
 	return &Enigma{Reflectors[reflectorID], *NewPlugboard(plugs...), rotors}
@@ -34,8 +30,10 @@ type Plugboard map[rune]rune
 func NewPlugboard(pairs ...string) *Plugboard {
 	p := Plugboard{}
 	for _, pair := range pairs {
-		p[rune(pair[0])] = rune(pair[1])
-		p[rune(pair[1])] = rune(pair[0])
+		if len(pair) > 0 {
+			p[rune(pair[0])] = rune(pair[1])
+			p[rune(pair[1])] = rune(pair[0])
+		}
 	}
 	return &p
 }
@@ -43,10 +41,10 @@ func NewPlugboard(pairs ...string) *Plugboard {
 func (e *Enigma) moveRotors() {
 	rotate := make(map[int]int, len(e.rotors))
 	rotate[len(e.rotors)-1] = 1
-	if e.rotors[len(e.rotors)-1].notch[abc.ToChar((e.rotors[len(e.rotors)-1].offset+26)%26)] {
+	if e.rotors[len(e.rotors)-1].notch[ToChar((e.rotors[len(e.rotors)-1].offset+26)%26)] {
 		rotate[len(e.rotors)-2] = 1
 	}
-	if e.rotors[len(e.rotors)-2].notch[abc.ToChar((e.rotors[len(e.rotors)-2].offset+26)%26)] {
+	if e.rotors[len(e.rotors)-2].notch[ToChar((e.rotors[len(e.rotors)-2].offset+26)%26)] {
 		rotate[len(e.rotors)-2] = 1
 		rotate[len(e.rotors)-3] = 1
 	}

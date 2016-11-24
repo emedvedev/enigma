@@ -1,7 +1,6 @@
-package enigma
+package main
 
 import (
-	abc "github.com/emedvedev/enigma/alphabet"
 	"strings"
 )
 
@@ -31,13 +30,13 @@ func NewRotor(mapping string, notch []rune) *Rotor {
 // Step through the rotor, performing the letter substitution depending
 // on the offset and direction.
 func (r *Rotor) Step(letter *rune, invert bool) {
-	number := (abc.ToInt(*letter) - r.ring + r.offset + 26) % 26
+	number := (ToInt(*letter) - r.ring + r.offset + 26) % 26
 	if invert {
-		number = strings.IndexRune(r.sequence, abc.ToChar(number))
+		number = strings.IndexRune(r.sequence, ToChar(number))
 	} else {
-		number = abc.ToInt(rune(r.sequence[number]))
+		number = ToInt(rune(r.sequence[number]))
 	}
-	*letter = abc.ToChar((number + r.ring - r.offset + 26) % 26)
+	*letter = ToChar((number + r.ring - r.offset + 26) % 26)
 }
 
 // RotorConfig sets the initial configuration for a rotor: ID from
@@ -74,7 +73,7 @@ type Reflector struct {
 // Reflect is a method for reversing the Enigma signal: it is just a
 // simple substitution, essentially.
 func (r *Reflector) Reflect(letter *rune) {
-	*letter = abc.ToChar(strings.IndexRune(r.sequence, *letter))
+	*letter = ToChar(strings.IndexRune(r.sequence, *letter))
 }
 
 // Reflectors in the list are pre-loaded with historically accurate data
