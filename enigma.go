@@ -4,7 +4,7 @@
 // in your own Go code, but there is also a companion CLI
 // tool:
 //
-// go install github.com/emedvedev/enigma/cmd/enigma
+// 	go install github.com/emedvedev/enigma/cmd/enigma
 //
 // While the CLI syntax is a bit verbose, it's actually possible
 // to use the tool without any source code modifications, config
@@ -21,19 +21,19 @@ package enigma
 // Enigma represents an Enigma machine with configured rotors, plugs,
 // and a reflector. Most states are stored in the rotors themselves.
 type Enigma struct {
-	reflector Reflector
-	plugboard Plugboard
-	rotors    []Rotor
+	Reflector Reflector
+	Plugboard Plugboard
+	Rotors    []Rotor
 }
 
 // NewEnigma is the Enigma constructor, accepting an array of RotorConfig objects
-// for rotors, a reflector ID/name and an array of plugs.
+// for rotors, a reflector ID/name, and an array of plugboard pairs.
 func NewEnigma(rotorConfiguration []RotorConfig, reflectorID string, plugs []string) *Enigma {
 	rotors := make([]Rotor, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
 		rotors[i] = Rotors[configuration.ID]
-		rotors[i].offset = ToInt(configuration.Start)
-		rotors[i].ring = configuration.Ring - 1
+		rotors[i].Offset = ToInt(configuration.Start)
+		rotors[i].Ring = configuration.Ring - 1
 	}
 	return &Enigma{Reflectors[reflectorID], *NewPlugboard(plugs), rotors}
 }
@@ -56,35 +56,35 @@ func NewPlugboard(pairs []string) *Plugboard {
 }
 
 func (e *Enigma) moveRotors() {
-	var rotate = make(map[int]int, len(e.rotors))
-	rotate[len(e.rotors)-1] = 1
-	if e.rotors[len(e.rotors)-1].notch[ToChar((e.rotors[len(e.rotors)-1].offset+26)%26)] {
-		rotate[len(e.rotors)-2] = 1
+	var rotate = make(map[int]int, len(e.Rotors))
+	rotate[len(e.Rotors)-1] = 1
+	if e.Rotors[len(e.Rotors)-1].Notch[ToChar((e.Rotors[len(e.Rotors)-1].Offset+26)%26)] {
+		rotate[len(e.Rotors)-2] = 1
 	}
-	if e.rotors[len(e.rotors)-2].notch[ToChar((e.rotors[len(e.rotors)-2].offset+26)%26)] {
-		rotate[len(e.rotors)-2] = 1
-		rotate[len(e.rotors)-3] = 1
+	if e.Rotors[len(e.Rotors)-2].Notch[ToChar((e.Rotors[len(e.Rotors)-2].Offset+26)%26)] {
+		rotate[len(e.Rotors)-2] = 1
+		rotate[len(e.Rotors)-3] = 1
 	}
 	for rotor, offset := range rotate {
-		var newOffset = (e.rotors[rotor].offset + offset + 26) % 26
-		e.rotors[rotor].offset = newOffset
+		var newOffset = (e.Rotors[rotor].Offset + offset + 26) % 26
+		e.Rotors[rotor].Offset = newOffset
 	}
 }
 
 // EncryptChar inputs a single character into the machine.
 func (e *Enigma) EncryptChar(letter *rune) {
 	e.moveRotors()
-	if value, ok := e.plugboard[*letter]; ok {
+	if value, ok := e.Plugboard[*letter]; ok {
 		*letter = value
 	}
-	for i := len(e.rotors) - 1; i >= 0; i-- {
-		e.rotors[i].Step(letter, false)
+	for i := len(e.Rotors) - 1; i >= 0; i-- {
+		e.Rotors[i].Step(letter, false)
 	}
-	e.reflector.Reflect(letter)
-	for i := 0; i < len(e.rotors); i++ {
-		e.rotors[i].Step(letter, true)
+	e.Reflector.Reflect(letter)
+	for i := 0; i < len(e.Rotors); i++ {
+		e.Rotors[i].Step(letter, true)
 	}
-	if value, ok := e.plugboard[*letter]; ok {
+	if value, ok := e.Plugboard[*letter]; ok {
 		*letter = value
 	}
 }

@@ -11,10 +11,10 @@ import (
 // are billions of possible combinations, making brute-forcing attacks
 // on Enigma unfeasible.
 type Rotor struct {
-	sequence string
-	offset   int
-	ring     int
-	notch    map[rune]bool
+	Sequence string
+	Offset   int
+	Ring     int
+	Notch    map[rune]bool
 }
 
 // NewRotor is a constructor taking a mapping string and a notch position
@@ -24,19 +24,19 @@ func NewRotor(mapping string, notch []rune) *Rotor {
 	for _, char := range notch {
 		notchMap[char] = true
 	}
-	return &Rotor{sequence: mapping, offset: 0, ring: 0, notch: notchMap}
+	return &Rotor{mapping, 0, 0, notchMap}
 }
 
 // Step through the rotor, performing the letter substitution depending
 // on the offset and direction.
 func (r *Rotor) Step(letter *rune, invert bool) {
-	number := (ToInt(*letter) - r.ring + r.offset + 26) % 26
+	number := (ToInt(*letter) - r.Ring + r.Offset + 26) % 26
 	if invert {
-		number = strings.IndexRune(r.sequence, ToChar(number))
+		number = strings.IndexRune(r.Sequence, ToChar(number))
 	} else {
-		number = ToInt(rune(r.sequence[number]))
+		number = ToInt(rune(r.Sequence[number]))
 	}
-	*letter = ToChar((number + r.ring - r.offset + 26) % 26)
+	*letter = ToChar((number + r.Ring - r.Offset + 26) % 26)
 }
 
 // RotorConfig sets the initial configuration for a rotor: ID from
@@ -67,13 +67,13 @@ var Rotors = map[string]Rotor{
 // goes from the keys through the rotors to the reflector, then it is
 // reversed and goes through the rotors again in the opposite direction.
 type Reflector struct {
-	sequence string
+	Sequence string
 }
 
 // Reflect is a method for reversing the Enigma signal in a reflector:
 // it is just a simple substitution, essentially.
 func (r *Reflector) Reflect(letter *rune) {
-	*letter = ToChar(strings.IndexRune(r.sequence, *letter))
+	*letter = ToChar(strings.IndexRune(r.Sequence, *letter))
 }
 
 // Reflectors in the list are pre-loaded with historically accurate data
