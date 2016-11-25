@@ -15,22 +15,22 @@
 // Using an Enigma machine with default settings is somewhat similar to
 // setting your password to "0000". Let's up our security game:
 //
-//  enigma youtu.be/dQw4w9WgXcQ --rotors Beta VI I III  --reflector C-Thin --plugboard AD SF ET RY HK JL QZ WX UM OP --rings 10 5 16 10
+//  enigma youtu.be/dQw4w9WgXcQ --rotors Beta VI I III --reflector C-Thin --plugboard AD SF ET RY HK JL QZ WX UM OP --rings 10 5 16 10
 //
-// Much better.
+// Much better. Enjoy!
 //
 // Support
 //
-// - Enigma M3 and M4 are supported with the pre-defined settings.
+// — Enigma M3 and M4 are supported with the pre-defined settings.
 //
-// - Other Enigma models might be supported depending on rotor
+// — Other Enigma models might be supported depending on the rotor
 // turnover behavior.
 //
-// - Additional features and devices such as Uhr are not supported.
+// — Additional features and devices such as Uhr are not supported.
 //
-// Importantly, everything except English letters is discarded, since
-// Enigma machines only had 26 keys. It's up to you to come up with
-// a suitable encoding.
+// Importantly, everything outside the English alphabet (including
+// digits) is discarded, since Enigma machines only had 26 keys.
+// It's up to you to come up with a suitable encoding.
 package enigma
 
 // Enigma represents an Enigma machine with configured rotors, plugs,
