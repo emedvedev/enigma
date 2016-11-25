@@ -12,8 +12,8 @@
 //
 // Support:
 //
-// 	- Enigma M3 and M4 are supported with the pre-loaded settings.
-//  - Other Enigma devices might be supporting depending on rotor
+// 	- Enigma M3 and M4 are supported with the pre-defined settings.
+//  - Other Enigma models might be supported depending on rotor
 //		turnover behavior.
 // 	- Additional devices such as Uhr are not supported.
 package enigma

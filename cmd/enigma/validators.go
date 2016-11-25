@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/emedvedev/enigma/pkg/enigma"
+	"github.com/emedvedev/enigma"
 	"github.com/mkideal/cli"
 )
 
