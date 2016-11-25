@@ -52,7 +52,7 @@
 // add a new entry to the list in `rotors.go`, and that's it. Notches for
 // rotor turnover are optional.
 //
-// There's a bunch of more exotic Enigma variants and implementations, as well
+// There's many Enigma variants and implementations, as well
 // as devices such as Uhr, that are not supported due to my chronic lack of
 // spare time, and your pull requests are more than welcome!
 package enigma
