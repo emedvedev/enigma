@@ -1,13 +1,19 @@
 // Package enigma is an Enigma cipher machine emulator.
 //
+// This is a neat little emulator of various Enigma machines
+// with a lot of confugurable parameters and a CLI tool.
+// Somebody hurt your feelings by saying "my grandmother
+// encrypts better than you"? I've got you covered! With
+// this port of the amazing 1940's technology you'll be
+// just as good at encrypting things as anyone's grandmother.
+//
 // This package contains a library to use an Enigma machine
-// in your own Go code, but there is also a companion CLI
-// tool:
+// in your own Go code. For the CLI tool use cmd/enigma:
 //
 // 	go install github.com/emedvedev/enigma/cmd/enigma
 //
-// While the full CLI syntax is a bit verbose, it's actually possible
-// to use the tool without any source code modifications, config
+// The full CLI syntax is a bit verbose, but it's possible to
+// use the tool without any source code modifications, config
 // files, or Enigma knowledge:
 //
 //  enigma Never gonna give you up, never gonna let you down!
@@ -17,20 +23,38 @@
 //
 //  enigma youtu.be/dQw4w9WgXcQ --rotors Beta VI I III --reflector C-Thin --plugboard AD SF ET RY HK JL QZ WX UM OP --rings 10 5 16 10
 //
-// Much better. Enjoy!
+// Much better. And of course, `enigma -h` will give you the complete
+// description of parameters and usage.
 //
-// Support
+// Importantly, since Enigma machines only have 26 keys, spaces
+// are replaced with X, and everything outside of the English alphabet
+// is discarded. It's up to you to come up with a suitable encoding.
 //
-// — Enigma M3 and M4 are supported with the pre-defined settings.
+// Enjoy!
 //
-// — Other Enigma models might be supported depending on the rotor
-// turnover behavior.
+// Enigma models and features
 //
-// — Additional features and devices such as Uhr are not supported.
+// There's a bunch of things that can be configured in the emulator:
 //
-// Importantly, everything outside the English alphabet (including
-// digits) is discarded, since Enigma machines only had 26 keys.
-// It's up to you to come up with a suitable encoding.
+// — Rotor set: rotors from M3 and M4, the most famous Enigma machines,
+// are pre-loaded.
+//
+// — Reflector: reflectors A, B, and C — as well as the thin B and C
+// versions used in M4 — are supported.
+//
+// — Plugboard: any number of letter pairs is accepted. Plugboard
+// configuration is optional.
+//
+// — Ring offsets and starting position of the rotors.
+//
+// M3 and M4 can be fully emulated with the right parameters, and if it's
+// not enough, new rotors and reflectors can be added quite easily: just
+// add a new entry to the list in `rotors.go`, and that's it. Notches for
+// rotor turnover are optional.
+//
+// There's a bunch of more exotic Enigma variants and implementations, as well
+// as devices such as Uhr, that are not supported due to my chronic lack of
+// spare time, and your pull requests are more than welcome!
 package enigma
 
 // Enigma represents an Enigma machine with configured rotors, plugs,
