@@ -44,7 +44,8 @@ Enjoy!
 
 ## Enigma models and features
 
-There's a bunch of things that can be configured in the emulator:
+Almost everything from the German Enigma machines can be configured in this
+emulator:
 
 * Rotor set: rotors from M3 and M4, the most famous Enigma machines, are
   pre-loaded.
@@ -62,9 +63,9 @@ not enough, new rotors and reflectors can be added quite easily: just
 add a new entry to the list in `rotors.go`, and that's it. Notches for
 rotor turnover are optional.
 
-There's many Enigma variants and implementations, as well as devices
-such as Uhr, that are not supported due to my chronic lack of spare time, and your pull 
-requests are more than welcome!
+Some exotic Enigma variants and implementations, as well
+as devices such as Uhr, are not supported due to my chronic lack of
+spare time. Your pull requests would be most welcome!
 
 ## Further reading
 
