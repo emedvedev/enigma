@@ -2,99 +2,30 @@ package main
 
 import (
 	"fmt"
-	"github.com/mkideal/cli"
 	"os"
-	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/mkideal/cli"
 )
 
-const DESCRIPTION = `
-usage: enigma <text> [--rotors=I II III] [--rings=3 4 3] [--reflector=C]
-                     [--plugboard=AB CD] [--position=A A A]
-
-Enigma cipher machine simulator
-
-Encrypt or decrypt text using this configurable Enigma simulation:
-it fully supports both M3 and M4, as well as some older models.
-You are free to pick a rotor set, configure rings and starting
-positions of the rotors, choose from a variety of reflectors and
-mess with the plugboard.
-
-Enjoy!
-`
-
-const OUTPUT = `
-Enigma configuration
---------------------------------------------------
-Rotors: {{ .Args.Rotors }}
-Rotor positions: {{ .Args.Position }}
-Rings: {{ .Args.Rings }}
-Plugboard: {{ or (.Args.Plugboard) ("empty") }}
-Reflector: {{ .Args.Reflector }}
-==================================================
-
-Plaintext
---------------------------------------------------
-{{ .Original }}
-==================================================
-{{ if ne (.Plain) (.Original) }}
-Modified plaintext
---------------------------------------------------
-{{ .Plain }}
-==================================================
-{{ end }}
-Result
---------------------------------------------------
-{{ .Encrypted }}
-==================================================
-
-`
-
-type CLIOpts struct {
-	Help      bool     `cli:"!h,help" usage:"Show help."`
-	Rotors    []string `cli:"rotors" name:"I II III" usage:"Rotor configuration. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma."`
-	Rings     []int    `cli:"rings" name:"3 4 3" usage:"Each rotor ring can be shifted: 1 is the default location, 26 is the maximum."`
-	Plugboard []string `cli:"plugboard" name:"AB CD" usage:"Optional plugboard pairs. Letters must be unique across the plugboard."`
-	Position  []string `cli:"position" name:"A A A" usage:"Starting position, A-Z for each rotor."`
-	Reflector string   `cli:"reflector" name:"C" usage:"Reflector. Supported: A, B, C, B-Thin, C-Thin."`
-}
-
-func (argv *CLIOpts) Validate(ctx *cli.Context) error {
-
-	for _, char := range argv.Position {
-		if matched, _ := regexp.MatchString(`^[A-Z]$`, char); !matched {
-			return fmt.Errorf("Rotor positions should be single letters in the A-Z range.")
-		}
-	}
-
-	if !(len(argv.Rotors) == len(argv.Position) && len(argv.Position) == len(argv.Rings)) {
-		return fmt.Errorf("You should configure equal number of rotors, rings, and position settings.")
-	}
-
-	for _, ring := range argv.Rings {
-		if ring < 1 || ring > 26 {
-			return fmt.Errorf("Ring out of range! Must be in the range of 1-26.")
-		}
-	}
-
-	return nil
-}
-
+// EnigmaCLI is the main function exposing CLI for Enigma.
+// There is only two commands: one performs the encryption,
+// another one shows a pretty help message. Nothing too fancy.
 func EnigmaCLI() {
 
 	cli.SetUsageStyle(cli.DenseManualStyle)
 	cli.Run(new(CLIOpts), func(ctx *cli.Context) error {
 		argv := ctx.Argv().(*CLIOpts)
-		if argv.Help {
+		originalPlaintext := strings.Join(ctx.Args(), " ")
+		plaintext := SanitizePlaintext(originalPlaintext)
+
+		if argv.Help || len(plaintext) == 0 {
 			com := ctx.Command()
-			com.Text = DESCRIPTION
+			com.Text = DescriptionTemplate
 			ctx.String(com.Usage(ctx))
 			return nil
 		}
-
-		originalPlaintext := strings.Join(ctx.Args(), " ")
-		plaintext := SanitizePlaintext(originalPlaintext)
 
 		config := make([]RotorConfig, len(argv.Rotors))
 		for index, rotor := range argv.Rotors {
@@ -106,13 +37,135 @@ func EnigmaCLI() {
 		e := NewEnigma(config, argv.Reflector, argv.Plugboard)
 		encrypted := e.EncryptString(plaintext)
 
-		tmpl, _ := template.New("cli").Parse(OUTPUT)
-		tmpl.Execute(os.Stdout, struct {
+		if argv.Condensed {
+			fmt.Print(encrypted)
+			return nil
+		}
+
+		tmpl, _ := template.New("cli").Parse(OutputTemplate)
+		err := tmpl.Execute(os.Stdout, struct {
 			Original, Plain, Encrypted string
 			Args                       *CLIOpts
-		}{originalPlaintext, plaintext, encrypted, argv})
+			Ctx                        *cli.Context
+		}{originalPlaintext, plaintext, encrypted, argv, ctx})
+		return err
 
-		return nil
 	})
 
 }
+
+// CLIOpts sets the parameter format for Enigma CLI. It also includes a "help"
+// flag and a "condensed" flag telling the program to output plain result.
+// Also, this CLI module abuses tags so much it hurts. Oh well. ¯\_(ツ)_/¯
+type CLIOpts struct {
+	Help      bool `cli:"!h,help" usage:"Show help."`
+	Condensed bool `cli:"c,condensed" name:"false" usage:"Output the result without additional information."`
+
+	Rotors    []string `cli:"rotors" name:"I II III" usage:"Rotor configuration. Supported: I, II, III, IV, V, VI, VII, VIII, Beta, Gamma."`
+	Rings     []int    `cli:"rings" name:"1 1 1" usage:"Rotor rings offset: from 1 (default) to 26 for each rotor."`
+	Position  []string `cli:"position" name:"A A A" usage:"Starting position of the rotors: from A (default) to Z for each."`
+	Plugboard []string `cli:"plugboard" name:"[]" usage:"Optional plugboard pairs to scramble the message further."`
+
+	Reflector string `cli:"reflector" name:"C" usage:"Reflector. Supported: A, B, C, B-Thin, C-Thin."`
+}
+
+// Validate runs checks on all available Enigma parameters; the checks
+// themselves are separate. The defaults are loaded before validation:
+// some of the parameter combinations that a user might supply won't work
+// with the defaults, so we'll combine first, then check the final form.
+func (argv *CLIOpts) Validate(ctx *cli.Context) error {
+	SetDefaults(argv)
+	validators := [](func(argv *CLIOpts, ctx *cli.Context) error){
+		ValidatePlugboard,
+		ValidateRotors,
+		ValidateReflector,
+		ValidatePosition,
+		ValidateRings,
+		ValidateUniformity,
+	}
+	for _, validator := range validators {
+		if err := validator(argv, ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SetDefaults sets values for all Enigma parameters that
+// were not set explicitly. Plugboard is the only parameter
+// that does not require a default, since it can be empty,
+// and some Enigma machines did not have a plugboard at all.
+func SetDefaults(argv *CLIOpts) {
+	if argv.Reflector == "" {
+		argv.Reflector = EnigmaDefaults.Reflector
+	}
+	if len(argv.Rotors) == 0 {
+		argv.Rotors = EnigmaDefaults.Rotors
+	}
+	loadRings := (len(argv.Rings) == 0)
+	loadPosition := (len(argv.Position) == 0)
+	if loadRings || loadPosition {
+		for range argv.Rotors {
+			if loadRings {
+				argv.Rings = append(argv.Rings, EnigmaDefaults.Ring)
+			}
+			if loadPosition {
+				argv.Position = append(argv.Position, EnigmaDefaults.Position)
+			}
+		}
+	}
+}
+
+// EnigmaDefaults is used to populate default values in case
+// one or more of the parameters aren't set. It is assumed
+// that rotor rings and positions will be the same for all
+// rotors if not set explicitly, so only one value is stored.
+var EnigmaDefaults = struct {
+	Reflector string
+	Ring      int
+	Position  string
+	Rotors    []string
+}{
+	Reflector: "C",
+	Ring:      1,
+	Position:  "A",
+	Rotors:    []string{"I", "II", "III"},
+}
+
+// DescriptionTemplate is a simple template for help and usage.
+const DescriptionTemplate = `
+usage: enigma <text> [--rotors=I II III] [--rings=3 4 3] [--reflector=C]
+                     [--plugboard=AB CD] [--position=A A A]
+
+Enigma cipher machine emulator
+
+Encrypt all the things with the power of this handy Enigma emulator:
+it fully supports the most popular M3 and M4 models, and quite a few
+others, too. Choose a rotor set and a reflector, configure rings and
+starting positions of the rotors, select plugboard pairs--and you're
+all set! Don't forget: cryptography is only real when shared. Make a
+friend.
+
+Enjoy!
+`
+
+// OutputTemplate is a template for the encryption result
+// that will be used if the Concise flag isn't set.
+const OutputTemplate = `
+{{ (.Ctx.Color).Bold "Result:" }}
+  {{ .Encrypted }}
+
+{{ (.Ctx.Color).Bold "Enigma configuration:" }}
+  Rotors: {{ .Args.Rotors }}
+  Rotor positions: {{ .Args.Position }}
+  Rings: {{ .Args.Rings }}
+  Plugboard: {{ or (.Args.Plugboard) ("empty") }}
+  Reflector: {{ .Args.Reflector }}
+
+{{ (.Ctx.Color).Bold "Original text:" }}
+  {{ .Original }}
+{{ if ne (.Plain) (.Original) }}
+{{ (.Ctx.Color).Bold "Processed original text:" }}
+  {{ .Plain }}
+{{ end }}
+`
