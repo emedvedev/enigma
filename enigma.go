@@ -6,18 +6,31 @@
 //
 // 	go install github.com/emedvedev/enigma/cmd/enigma
 //
-// While the CLI syntax is a bit verbose, it's actually possible
+// While the full CLI syntax is a bit verbose, it's actually possible
 // to use the tool without any source code modifications, config
 // files, or Enigma knowledge:
 //
-//  enigma Never gonna give you up, never gonna let you down! --rotors Beta VI V II --reflector C-Thin
+//  enigma Never gonna give you up, never gonna let you down!
+//
+// Using an Enigma machine with default settings is somewhat similar to
+// setting your password to "0000". Let's up our security game:
+//
+//  enigma youtu.be/dQw4w9WgXcQ --rotors Beta VI I III  --reflector C-Thin --plugboard AD SF ET RY HK JL QZ WX UM OP --rings 10 5 16 10
+//
+// Much better.
 //
 // Support
 //
-// * Enigma M3 and M4 are supported with the pre-defined settings.
-// * Other Enigma models might be supported depending on rotor
+// - Enigma M3 and M4 are supported with the pre-defined settings.
+//
+// - Other Enigma models might be supported depending on rotor
 // turnover behavior.
-// * Additional devices such as Uhr are not supported.
+//
+// - Additional features and devices such as Uhr are not supported.
+//
+// Importantly, everything except English letters is discarded, since
+// Enigma machines only had 26 keys. It's up to you to come up with
+// a suitable encoding.
 package enigma
 
 // Enigma represents an Enigma machine with configured rotors, plugs,
