@@ -1,11 +1,11 @@
-package main
+package enigma
 
 import (
 	"strings"
 )
 
 // Rotor is the device performing letter substitutions inside
-// the Enigma machine. The rotors can be put in different positions,
+// the Enigma machine. Rotors can be put in different positions,
 // swapped, and replaced; they are also rotated during the encoding
 // process, following the machine configuration. As a result, there
 // are billions of possible combinations, making brute-forcing attacks
@@ -17,8 +17,8 @@ type Rotor struct {
 	notch    map[rune]bool
 }
 
-// NewRotor is a constructor taking a string with the mapping, and
-// a notch position that will trigger the rotation of the next rotor.
+// NewRotor is a constructor taking a mapping string and a notch position
+// that will trigger the rotation of the next rotor.
 func NewRotor(mapping string, notch []rune) *Rotor {
 	notchMap := map[rune]bool{}
 	for _, char := range notch {
@@ -40,7 +40,7 @@ func (r *Rotor) Step(letter *rune, invert bool) {
 }
 
 // RotorConfig sets the initial configuration for a rotor: ID from
-// the pre-defined list, a starting position, and a ring setting.
+// the pre-defined list, a starting position (A-Z), and a ring setting (1-26).
 type RotorConfig struct {
 	ID    string
 	Start rune
@@ -70,8 +70,8 @@ type Reflector struct {
 	sequence string
 }
 
-// Reflect is a method for reversing the Enigma signal: it is just a
-// simple substitution, essentially.
+// Reflect is a method for reversing the Enigma signal in a reflector:
+// it is just a simple substitution, essentially.
 func (r *Reflector) Reflect(letter *rune) {
 	*letter = ToChar(strings.IndexRune(r.sequence, *letter))
 }

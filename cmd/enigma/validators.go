@@ -5,29 +5,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/emedvedev/enigma/pkg/enigma"
 	"github.com/mkideal/cli"
 )
-
-// ToInt returns the alphabet index of a given letter.
-func ToInt(char rune) int {
-	return int(char - 'A')
-}
-
-// ToChar returns the letter with a given alphabet index.
-func ToChar(index int) rune {
-	return rune('A' + index)
-}
-
-// SanitizePlaintext will prepare a string to be encoded
-// in the Enigma machine: everything except A-Z will be
-// stripped, spaces will be replaced with "X".
-func SanitizePlaintext(plaintext string) string {
-	plaintext = strings.TrimSpace(plaintext)
-	plaintext = strings.ToUpper(plaintext)
-	plaintext = strings.Replace(plaintext, " ", "X", -1)
-	plaintext = regexp.MustCompile(`[^A-Z]`).ReplaceAllString(plaintext, "")
-	return plaintext
-}
 
 // ValidatePlugboard checks that all plugboard pairs are formatted correctly,
 // and letters in pairs do not repeat.
@@ -53,7 +33,7 @@ func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
 // in the pre-defined list.
 func ValidateRotors(argv *CLIOpts, ctx *cli.Context) error {
 	for _, rotor := range argv.Rotors {
-		if _, ok := Rotors[rotor]; !ok {
+		if _, ok := enigma.Rotors[rotor]; !ok {
 			return fmt.Errorf(`unknown rotor "%s"`, ctx.Color().Yellow(rotor))
 		}
 	}
@@ -63,7 +43,7 @@ func ValidateRotors(argv *CLIOpts, ctx *cli.Context) error {
 // ValidateReflector checks that the requested reflector is present
 // in the pre-defined list.
 func ValidateReflector(argv *CLIOpts, ctx *cli.Context) error {
-	if _, ok := Reflectors[argv.Reflector]; !ok {
+	if _, ok := enigma.Reflectors[argv.Reflector]; !ok {
 		return fmt.Errorf(`unknown reflector "%s"`, ctx.Color().Yellow(argv.Reflector))
 	}
 	return nil

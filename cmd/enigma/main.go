@@ -6,19 +6,55 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/emedvedev/enigma/pkg/enigma"
 	"github.com/mkideal/cli"
 )
 
-// EnigmaCLI is the main function exposing CLI for Enigma.
-// There is only two commands: one performs the encryption,
-// another one shows a pretty help message. Nothing too fancy.
-func EnigmaCLI() {
+// DescriptionTemplate is a simple template for help and usage.
+const DescriptionTemplate = `
+usage: enigma <text> [--rotors=I II III] [--rings=3 4 3] [--reflector=C]
+                     [--plugboard=AB CD] [--position=A A A]
+
+Enigma cipher machine emulator
+
+Encrypt all the things with the power of this handy Enigma emulator:
+it fully supports the most popular M3 and M4 models, and quite a few
+others, too. Choose a rotor set and a reflector, configure rings and
+starting positions of the rotors, select plugboard pairs--and you're
+all set! Don't forget: cryptography is only real when shared. Make a
+friend.
+
+Enjoy!
+`
+
+// OutputTemplate is a template for the encryption result
+// that will be used if the Concise flag isn't set.
+const OutputTemplate = `
+{{ (.Ctx.Color).Bold "Result:" }}
+  {{ .Encrypted }}
+
+{{ (.Ctx.Color).Bold "Enigma configuration:" }}
+  Rotors: {{ .Args.Rotors }}
+  Rotor positions: {{ .Args.Position }}
+  Rings: {{ .Args.Rings }}
+  Plugboard: {{ or (.Args.Plugboard) ("empty") }}
+  Reflector: {{ .Args.Reflector }}
+
+{{ (.Ctx.Color).Bold "Original text:" }}
+  {{ .Original }}
+{{ if ne (.Plain) (.Original) }}
+{{ (.Ctx.Color).Bold "Processed original text:" }}
+  {{ .Plain }}
+{{ end }}
+`
+
+func main() {
 
 	cli.SetUsageStyle(cli.DenseManualStyle)
 	cli.Run(new(CLIOpts), func(ctx *cli.Context) error {
 		argv := ctx.Argv().(*CLIOpts)
 		originalPlaintext := strings.Join(ctx.Args(), " ")
-		plaintext := SanitizePlaintext(originalPlaintext)
+		plaintext := enigma.SanitizePlaintext(originalPlaintext)
 
 		if argv.Help || len(plaintext) == 0 {
 			com := ctx.Command()
@@ -27,14 +63,14 @@ func EnigmaCLI() {
 			return nil
 		}
 
-		config := make([]RotorConfig, len(argv.Rotors))
+		config := make([]enigma.RotorConfig, len(argv.Rotors))
 		for index, rotor := range argv.Rotors {
 			ring := argv.Rings[index]
 			value := rune(argv.Position[index][0])
-			config[index] = RotorConfig{rotor, value, ring}
+			config[index] = enigma.RotorConfig{rotor, value, ring}
 		}
 
-		e := NewEnigma(config, argv.Reflector, argv.Plugboard)
+		e := enigma.NewEnigma(config, argv.Reflector, argv.Plugboard)
 		encrypted := e.EncryptString(plaintext)
 
 		if argv.Condensed {
@@ -131,41 +167,3 @@ var EnigmaDefaults = struct {
 	Position:  "A",
 	Rotors:    []string{"I", "II", "III"},
 }
-
-// DescriptionTemplate is a simple template for help and usage.
-const DescriptionTemplate = `
-usage: enigma <text> [--rotors=I II III] [--rings=3 4 3] [--reflector=C]
-                     [--plugboard=AB CD] [--position=A A A]
-
-Enigma cipher machine emulator
-
-Encrypt all the things with the power of this handy Enigma emulator:
-it fully supports the most popular M3 and M4 models, and quite a few
-others, too. Choose a rotor set and a reflector, configure rings and
-starting positions of the rotors, select plugboard pairs--and you're
-all set! Don't forget: cryptography is only real when shared. Make a
-friend.
-
-Enjoy!
-`
-
-// OutputTemplate is a template for the encryption result
-// that will be used if the Concise flag isn't set.
-const OutputTemplate = `
-{{ (.Ctx.Color).Bold "Result:" }}
-  {{ .Encrypted }}
-
-{{ (.Ctx.Color).Bold "Enigma configuration:" }}
-  Rotors: {{ .Args.Rotors }}
-  Rotor positions: {{ .Args.Position }}
-  Rings: {{ .Args.Rings }}
-  Plugboard: {{ or (.Args.Plugboard) ("empty") }}
-  Reflector: {{ .Args.Reflector }}
-
-{{ (.Ctx.Color).Bold "Original text:" }}
-  {{ .Original }}
-{{ if ne (.Plain) (.Original) }}
-{{ (.Ctx.Color).Bold "Processed original text:" }}
-  {{ .Plain }}
-{{ end }}
-`
