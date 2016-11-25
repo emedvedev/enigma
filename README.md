@@ -5,7 +5,7 @@
 This is a neat little emulator of various Enigma machines with a lot of
 confugurable parameters. Somebody hurt your feelings by saying "my grandmother
 encrypts better than you"? I've got you covered! With this port of the amazing
-amazing 1940's technology you'll be just as good at encrypting things as anyone's 
+1940's technology you'll be just as good at encrypting things as anyone's 
 grandmother.
 
 ### Usage
