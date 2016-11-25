@@ -1,6 +1,6 @@
 # Enigma cipher machine emulator
 
-![https://www.dropbox.com/s/5wb3u29ybxrzphl/Screenshot%202016-11-25%2015.34.47.png?dl=1]
+![](https://www.dropbox.com/s/5wb3u29ybxrzphl/Screenshot%202016-11-25%2015.34.47.png?dl=1)
 
 This is a neat little emulator of the Enigma machines with simple CLI and a lot of
 confugurable parameters. Somebody hurt your feelings by saying "my grandmother
