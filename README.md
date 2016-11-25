@@ -2,10 +2,11 @@
 
 ![](https://www.dropbox.com/s/5wb3u29ybxrzphl/Screenshot%202016-11-25%2015.34.47.png?dl=1)
 
-This is a neat little emulator of the Enigma machines with simple CLI and a lot of
+This is a neat little emulator of various Enigma machines with a lot of
 confugurable parameters. Somebody hurt your feelings by saying "my grandmother
-encrypts better than you"? I've got you covered! With this amazing port of the
-40's technology you'll be just as good at encrypting things as anyone's grandmother.
+encrypts better than you"? I've got you covered! With this port of the amazing
+amazing 1940's technology you'll be just as good at encrypting things as anyone's 
+grandmother.
 
 ### Usage
 
@@ -41,7 +42,7 @@ come up with a suitable encoding.
 
 Enjoy!
 
-### Configuration and settings
+## Enigma models and features
 
 There's a bunch of things that can be configured in the emulator:
 
@@ -56,15 +57,16 @@ There's a bunch of things that can be configured in the emulator:
 
 * Ring offsets and starting position of the rotors.
 
-M3 and M4 can be fully emulated with the right parameters, and if it's not enough, new 
-rotors and reflectors can be added quite easily: just add a new entry to the list in 
-`rotors.go`, and that's it. You can also specify notches for turnover.
+M3 and M4 can be fully emulated with the right parameters, and if it's
+not enough, new rotors and reflectors can be added quite easily: just
+add a new entry to the list in `rotors.go`, and that's it. Notches for
+rotor turnover are optional.
 
 There's a bunch of more exotic Enigma variants and implementations, as well as devices
 such as Uhr, that are not supported due to my chronic lack of spare time, and your pull 
 requests are more than welcome!
 
-### Further reading
+## Further reading
 
 A bunch of material on Enigma machines, in no particular order. Explanations, specs,
 other emulators.
