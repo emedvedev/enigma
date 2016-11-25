@@ -1,6 +1,8 @@
 # Enigma cipher machine emulator
 
-This is a neat little emulator of Enigma machines with simple CLI and a lot of
+![https://www.dropbox.com/s/5wb3u29ybxrzphl/Screenshot%202016-11-25%2015.34.47.png?dl=1]
+
+This is a neat little emulator of the Enigma machines with simple CLI and a lot of
 confugurable parameters. Somebody hurt your feelings by saying "my grandmother
 encrypts better than you"? I've got you covered! With this amazing port of the
 40's technology you'll be just as good at encrypting things as anyone's grandmother.
@@ -21,8 +23,13 @@ text in CLI:
 
 * Ring offsets and starting position of the rotors.
 
-New rotors and reflectors can be added quite easily in `rotors.go`: just add a
-new entry to the list, and that's it.
+M3 and M4 can be fully emulated with the right parameters, and if it's not enough, new 
+rotors and reflectors can be added quite easily: just add a new entry to the list in 
+`rotors.go`, and that's it. You can also specify notches for turnover.
+
+There's a bunch of more exotic Enigma variants and implementations, as well as devices
+such as Uhr, that are not supported in this version, but pull requests are always 
+welcome.
 
 ### Further reading
 
