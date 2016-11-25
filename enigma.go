@@ -5,17 +5,18 @@
 // tool:
 //
 // 	go install github.com/emedvedev/enigma/cmd/enigma
+//  enigma never gonna give you up  --rotors Beta VI V II  --reflector C-Thin
 //
 // While the CLI syntax is a bit verbose, it's actually possible
 // to use the tool without any source code modifications, config
 // files, or Enigma knowledge.
 //
-// Support:
+// Support
 //
-// 	- Enigma M3 and M4 are supported with the pre-defined settings.
-//  - Other Enigma models might be supported depending on rotor
-//		turnover behavior.
-// 	- Additional devices such as Uhr are not supported.
+// * Enigma M3 and M4 are supported with the pre-defined settings.
+// * Other Enigma models might be supported depending on rotor
+//   turnover behavior.
+// * Additional devices such as Uhr are not supported.
 package enigma
 
 // Enigma represents an Enigma machine with configured rotors, plugs,
