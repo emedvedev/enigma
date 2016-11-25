@@ -7,10 +7,43 @@ confugurable parameters. Somebody hurt your feelings by saying "my grandmother
 encrypts better than you"? I've got you covered! With this amazing port of the
 40's technology you'll be just as good at encrypting things as anyone's grandmother.
 
-### Configuration
+### Usage
 
-There's a bunch of things that can be configured when encrypting/decrypting your
-text in CLI:
+This repository contains both the CLI tool and its underlying library written in Go. 
+The library is documented on [GoDoc](https://godoc.org/github.com/emedvedev/enigma).
+
+As for the CLI tool, a simple `go install` should do it:
+
+```
+go install github.com/emedvedev/enigma/cmd/enigma
+```
+
+While the full CLI syntax is a bit verbose, it's actually possible to use the tool 
+without any source code modifications, config files, or Enigma knowledge:
+
+```
+enigma Never gonna give you up, never gonna let you down!
+```
+
+Using an Enigma machine with default settings is somewhat similar to
+setting your password to `0000`. Let's up our security game:
+
+```
+enigma youtu.be/dQw4w9WgXcQ --rotors Beta VI I III --reflector C-Thin --plugboard AD SF ET RY HK JL QZ WX UM OP --rings 10 5 16 10
+```
+
+Much better! And of course, `enigma -h` will give you the complete description of
+parameters and usage.
+
+Importantly, since Enigma machines only have 26 keys, spaces are replaced with `X`,
+and everything outside of the English alphabet is discarded. It's up to you to 
+come up with a suitable encoding. 
+
+Enjoy!
+
+### Configuration and settings
+
+There's a bunch of things that can be configured in the emulator:
 
 * Rotor set: rotors from M3 and M4, the most famous Enigma machines, are
   pre-loaded.
@@ -28,8 +61,8 @@ rotors and reflectors can be added quite easily: just add a new entry to the lis
 `rotors.go`, and that's it. You can also specify notches for turnover.
 
 There's a bunch of more exotic Enigma variants and implementations, as well as devices
-such as Uhr, that are not supported in this version, but pull requests are always 
-welcome.
+such as Uhr, that are not supported due to my chronic lack of spare time, and your pull 
+requests are more than welcome!
 
 ### Further reading
 
