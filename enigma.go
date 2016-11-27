@@ -80,7 +80,7 @@ func NewEnigma(rotorConfiguration []RotorConfig, reflectorID string, plugs []str
 
 // Plugboard is a two-way mapping between characters modifying the
 // encryption/decryption procedure of the Enigma machine.
-type Plugboard map[rune]rune
+type Plugboard map[byte]byte
 
 // NewPlugboard is the plugboard constructor accepting an array
 // of two-symbol strings representing plug pairs.
@@ -88,8 +88,8 @@ func NewPlugboard(pairs []string) *Plugboard {
 	p := Plugboard{}
 	for _, pair := range pairs {
 		if len(pair) > 0 {
-			p[rune(pair[0])] = rune(pair[1])
-			p[rune(pair[1])] = rune(pair[0])
+			p[pair[0]] = pair[1]
+			p[pair[1]] = pair[0]
 		}
 	}
 	return &p
@@ -112,29 +112,29 @@ func (e *Enigma) moveRotors() {
 }
 
 // EncryptChar inputs a single character into the machine.
-func (e *Enigma) EncryptChar(letter *rune) {
+func (e *Enigma) EncryptChar(letter byte) byte {
 	e.moveRotors()
-	if value, ok := e.Plugboard[*letter]; ok {
-		*letter = value
+	if value, ok := e.Plugboard[letter]; ok {
+		letter = value
 	}
 	for i := len(e.Rotors) - 1; i >= 0; i-- {
-		e.Rotors[i].Step(letter, false)
+		e.Rotors[i].Step(&letter, false)
 	}
-	e.Reflector.Reflect(letter)
+	e.Reflector.Reflect(&letter)
 	for i := 0; i < len(e.Rotors); i++ {
-		e.Rotors[i].Step(letter, true)
+		e.Rotors[i].Step(&letter, true)
 	}
-	if value, ok := e.Plugboard[*letter]; ok {
-		*letter = value
+	if value, ok := e.Plugboard[letter]; ok {
+		letter = value
 	}
+	return letter
 }
 
 // EncryptString inputs a string into the machine.
 func (e *Enigma) EncryptString(text string) string {
-	var encrypted string
-	for _, char := range text {
-		e.EncryptChar(&char)
-		encrypted += string(char)
+	encrypted := make([]byte, len(text))
+	for i := range text {
+		encrypted[i] = e.EncryptChar(text[i])
 	}
-	return encrypted
+	return string(encrypted)
 }

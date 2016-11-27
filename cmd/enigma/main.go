@@ -66,8 +66,8 @@ func main() {
 		config := make([]enigma.RotorConfig, len(argv.Rotors))
 		for index, rotor := range argv.Rotors {
 			ring := argv.Rings[index]
-			value := rune(argv.Position[index][0])
-			config[index] = enigma.RotorConfig{rotor, value, ring}
+			value := argv.Position[index][0]
+			config[index] = enigma.RotorConfig{ID: rotor, Start: byte(value), Ring: ring}
 		}
 
 		e := enigma.NewEnigma(config, argv.Reflector, argv.Plugboard)
