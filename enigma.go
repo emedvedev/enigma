@@ -95,19 +95,28 @@ func NewPlugboard(pairs []string) *Plugboard {
 	return &p
 }
 
+func (r *Rotor) move(offset int) {
+	r.Offset = (r.Offset + offset + 26) % 26
+}
+
 func (e *Enigma) moveRotors() {
-	var rotate = make(map[int]int, len(e.Rotors))
-	rotate[len(e.Rotors)-1] = 1
-	if e.Rotors[len(e.Rotors)-1].Notch[ToChar((e.Rotors[len(e.Rotors)-1].Offset+26)%26)] {
-		rotate[len(e.Rotors)-2] = 1
+	var (
+		rotorLen         = len(e.Rotors)
+		farRight         = &e.Rotors[rotorLen-1]
+		farRightNotch    = farRight.Notch[ToChar((farRight.Offset+26)%26)]
+		secondRight      = &e.Rotors[rotorLen-2]
+		secondRightNotch = secondRight.Notch[ToChar((secondRight.Offset+26)%26)]
+		thirdRight       = &e.Rotors[rotorLen-3]
+	)
+	farRight.move(1)
+	if farRightNotch {
+		secondRight.move(1)
 	}
-	if e.Rotors[len(e.Rotors)-2].Notch[ToChar((e.Rotors[len(e.Rotors)-2].Offset+26)%26)] {
-		rotate[len(e.Rotors)-2] = 1
-		rotate[len(e.Rotors)-3] = 1
-	}
-	for rotor, offset := range rotate {
-		var newOffset = (e.Rotors[rotor].Offset + offset + 26) % 26
-		e.Rotors[rotor].Offset = newOffset
+	if secondRightNotch {
+		if !farRightNotch {
+			secondRight.move(1)
+		}
+		thirdRight.move(1)
 	}
 }
 
