@@ -10,7 +10,7 @@
 // This package contains a library to use an Enigma machine
 // in your own Go code. For the CLI tool use cmd/enigma:
 //
-// 	go install github.com/emedvedev/enigma/cmd/enigma
+// 	go get github.com/emedvedev/enigma/cmd/enigma
 //
 // The full CLI syntax is a bit verbose, but it's possible to
 // use the tool without any source code modifications, config
@@ -63,19 +63,19 @@ package enigma
 type Enigma struct {
 	Reflector Reflector
 	Plugboard Plugboard
-	Rotors    []Rotor
+	Rotors    Rotors
 }
 
 // NewEnigma is the Enigma constructor, accepting an array of RotorConfig objects
 // for rotors, a reflector ID/name, and an array of plugboard pairs.
-func NewEnigma(rotorConfiguration []RotorConfig, reflectorID string, plugs []string) *Enigma {
-	rotors := make([]Rotor, len(rotorConfiguration))
+func NewEnigma(rotorConfiguration []RotorConfig, refID string, plugs []string) *Enigma {
+	rotors := make(Rotors, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
-		rotors[i] = Rotors[configuration.ID]
+		rotors[i] = HistoricRotors.GetByID(configuration.ID)
 		rotors[i].Offset = ToInt(configuration.Start)
 		rotors[i].Ring = configuration.Ring - 1
 	}
-	return &Enigma{Reflectors[reflectorID], *NewPlugboard(plugs), rotors}
+	return &Enigma{*HistoricReflectors.GetByID(refID), *NewPlugboard(plugs), rotors}
 }
 
 // Plugboard is a two-way mapping between characters modifying the
@@ -101,23 +101,22 @@ func (r *Rotor) move(offset int) {
 
 func (e *Enigma) moveRotors() {
 	var (
-		rotorLen         = len(e.Rotors)
-		farRight         = &e.Rotors[rotorLen-1]
-		farRightNotch    = farRight.Notch[ToChar((farRight.Offset+26)%26)]
-		secondRight      = &e.Rotors[rotorLen-2]
-		secondRightNotch = secondRight.Notch[ToChar((secondRight.Offset+26)%26)]
-		thirdRight       = &e.Rotors[rotorLen-3]
+		rotorLen           = len(e.Rotors)
+		farRight           = e.Rotors[rotorLen-1]
+		farRightAtNotch    = farRight.IsAtNotch()
+		secondRight        = e.Rotors[rotorLen-2]
+		secondRightAtNotch = secondRight.IsAtNotch()
 	)
-	farRight.move(1)
-	if farRightNotch {
-		secondRight.move(1)
-	}
-	if secondRightNotch {
-		if !farRightNotch {
+	if secondRightAtNotch {
+		if !farRightAtNotch {
 			secondRight.move(1)
 		}
-		thirdRight.move(1)
+		(e.Rotors[rotorLen-3]).move(1)
 	}
+	if farRightAtNotch {
+		secondRight.move(1)
+	}
+	farRight.move(1)
 }
 
 // EncryptChar inputs a single character into the machine.
@@ -126,13 +125,15 @@ func (e *Enigma) EncryptChar(letter byte) byte {
 	if value, ok := e.Plugboard[letter]; ok {
 		letter = value
 	}
+	l := ToInt(letter)
 	for i := len(e.Rotors) - 1; i >= 0; i-- {
-		e.Rotors[i].Step(&letter, false)
+		e.Rotors[i].Step(&l, false)
 	}
-	e.Reflector.Reflect(&letter)
+	l = e.Reflector.Reflect(l)
 	for i := 0; i < len(e.Rotors); i++ {
-		e.Rotors[i].Step(&letter, true)
+		e.Rotors[i].Step(&l, true)
 	}
+	letter = ToChar(l)
 	if value, ok := e.Plugboard[letter]; ok {
 		letter = value
 	}
@@ -142,8 +143,8 @@ func (e *Enigma) EncryptChar(letter byte) byte {
 // EncryptString inputs a string into the machine.
 func (e *Enigma) EncryptString(text string) string {
 	encrypted := make([]byte, len(text))
-	for i := range text {
-		encrypted[i] = e.EncryptChar(text[i])
+	for i, v := range text {
+		encrypted[i] = e.EncryptChar(byte(v))
 	}
 	return string(encrypted)
 }

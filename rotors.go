@@ -11,33 +11,49 @@ import (
 // are billions of possible combinations, making brute-forcing attacks
 // on Enigma unfeasible.
 type Rotor struct {
-	Sequence string
-	Offset   int
-	Ring     int
-	Notch    map[byte]bool
-	ID       string
+	ID          string
+	Sequence    string
+	IntSequence []int
+	Notch       []int
+
+	Offset int
+	Ring   int
 }
 
 // NewRotor is a constructor taking a mapping string and a notch position
 // that will trigger the rotation of the next rotor.
 func NewRotor(mapping string, id string, notches string) *Rotor {
-	notchMap := map[byte]bool{}
+	notchArr := make([]int, len(notches))
 	for i := range notches {
-		notchMap[notches[i]] = true
+		notchArr[i] = ToInt(notches[i])
 	}
-	return &Rotor{mapping, 0, 0, notchMap, id}
+	intSeq := make([]int, 26)
+	for i, value := range mapping {
+		intSeq[i] = ToInt(byte(value))
+	}
+	return &Rotor{id, mapping, intSeq, notchArr, 0, 0}
+}
+
+// IsAtNotch ...
+func (r *Rotor) IsAtNotch() bool {
+	for _, notch := range r.Notch {
+		if r.Offset == notch {
+			return true
+		}
+	}
+	return false
 }
 
 // Step through the rotor, performing the letter substitution depending
 // on the offset and direction.
-func (r *Rotor) Step(letter *byte, invert bool) {
-	number := (ToInt(*letter) - r.Ring + r.Offset + 26) % 26
+func (r *Rotor) Step(letter *int, invert bool) {
+	*letter = (*letter - r.Ring + r.Offset + 26) % 26
 	if invert {
-		number = strings.IndexByte(r.Sequence, ToChar(number))
+		*letter = strings.IndexByte(r.Sequence, ToChar(*letter))
 	} else {
-		number = ToInt(byte(r.Sequence[number]))
+		*letter = r.IntSequence[*letter]
 	}
-	*letter = ToChar((number + r.Ring - r.Offset + 26) % 26)
+	*letter = (*letter + r.Ring - r.Offset + 26) % 26
 }
 
 // RotorConfig sets the initial configuration for a rotor: ID from
@@ -48,42 +64,78 @@ type RotorConfig struct {
 	Ring  int
 }
 
-// Rotors match the original Enigma configurations, including the
+// Rotors ...
+type Rotors []*Rotor
+
+// Reflectors ...
+type Reflectors []*Reflector
+
+// HistoricRotors match the original Enigma configurations, including the
 // notches. "Beta" and "Gamma" are additional rotors used in M4
 // at the 4th position.
-var Rotors = map[string]Rotor{
-	"I":     *NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
-	"II":    *NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
-	"III":   *NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", "III", "V"),
-	"IV":    *NewRotor("ESOVPZJAYQUIRHXLNFTGKDCMWB", "IV", "J"),
-	"V":     *NewRotor("VZBRGITYUPSDNHLXAWMJQOFECK", "V", "Z"),
-	"VI":    *NewRotor("JPGVOUMFYQBENHZRDKASXLICTW", "VI", "ZM"),
-	"VII":   *NewRotor("NZJHGRCXMYSWBOUFAIVLPEKQDT", "VII", "ZM"),
-	"VIII":  *NewRotor("FKQHTLXOCBJSPDZRAMEWNIUYGV", "VIII", "ZM"),
-	"Beta":  *NewRotor("LEYJVCNIXWPBQMDRTAKZGFUHOS", "Beta", ""),
-	"Gamma": *NewRotor("FSOKANUERHMBTIYCWLQPZXVGJD", "Gamma", ""),
+var HistoricRotors = Rotors{
+	NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
+	NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),
+	NewRotor("BDFHJLCPRTXVZNYEIWGAKMUSQO", "III", "V"),
+	NewRotor("ESOVPZJAYQUIRHXLNFTGKDCMWB", "IV", "J"),
+	NewRotor("VZBRGITYUPSDNHLXAWMJQOFECK", "V", "Z"),
+	NewRotor("JPGVOUMFYQBENHZRDKASXLICTW", "VI", "ZM"),
+	NewRotor("NZJHGRCXMYSWBOUFAIVLPEKQDT", "VII", "ZM"),
+	NewRotor("FKQHTLXOCBJSPDZRAMEWNIUYGV", "VIII", "ZM"),
+	NewRotor("LEYJVCNIXWPBQMDRTAKZGFUHOS", "Beta", ""),
+	NewRotor("FSOKANUERHMBTIYCWLQPZXVGJD", "Gamma", ""),
+}
+
+// GetByID ...
+func (rs *Rotors) GetByID(id string) *Rotor {
+	for _, rotor := range *rs {
+		if rotor.ID == id {
+			return rotor
+		}
+	}
+	return nil
 }
 
 // Reflector is used to reverse a signal inside the Enigma: the current
 // goes from the keys through the rotors to the reflector, then it is
 // reversed and goes through the rotors again in the opposite direction.
 type Reflector struct {
-	Sequence string
-	ID       string
+	ID          string
+	Sequence    string
+	IntSequence []int
 }
 
 // Reflect is a method for reversing the Enigma signal in a reflector:
 // it is just a simple substitution, essentially.
-func (r *Reflector) Reflect(letter *byte) {
-	*letter = ToChar(strings.IndexByte(r.Sequence, *letter))
+func (ref *Reflector) Reflect(letter int) int {
+	return ref.IntSequence[letter]
 }
 
-// Reflectors in the list are pre-loaded with historically accurate data
+// HistoricReflectors in the list are pre-loaded with historically accurate data
 // from Enigma machines. Use "B-Thin" and "C-Thin" with M4 (4 rotors).
-var Reflectors = map[string]Reflector{
-	"A":      Reflector{"EJMZALYXVBWFCRQUONTSPIKHGD", "A"},
-	"B":      Reflector{"YRUHQSLDPXNGOKMIEBFZCWVJAT", "B"},
-	"C":      Reflector{"FVPJIAOYEDRZXWGCTKUQSBNMHL", "C"},
-	"B-Thin": Reflector{"ENKQAUYWJICOPBLMDXZVFTHRGS", "B-thin"},
-	"C-Thin": Reflector{"RDOBJNTKVEHMLFCWZAXGYIPSUQ", "C-thin"},
+var HistoricReflectors = Reflectors{
+	NewReflector("EJMZALYXVBWFCRQUONTSPIKHGD", "A"),
+	NewReflector("YRUHQSLDPXNGOKMIEBFZCWVJAT", "B"),
+	NewReflector("FVPJIAOYEDRZXWGCTKUQSBNMHL", "C"),
+	NewReflector("ENKQAUYWJICOPBLMDXZVFTHRGS", "B-thin"),
+	NewReflector("RDOBJNTKVEHMLFCWZAXGYIPSUQ", "C-thin"),
+}
+
+// NewReflector ...
+func NewReflector(mapping string, id string) *Reflector {
+	intSeq := make([]int, 26)
+	for i, value := range mapping {
+		intSeq[i] = ToInt(byte(value))
+	}
+	return &Reflector{id, mapping, intSeq}
+}
+
+// GetByID ...
+func (refs *Reflectors) GetByID(id string) *Reflector {
+	for _, ref := range *refs {
+		if ref.ID == id {
+			return ref
+		}
+	}
+	return nil
 }

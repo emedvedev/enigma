@@ -5,21 +5,21 @@
 This is a neat little emulator of various Enigma machines with a lot of
 confugurable parameters. Somebody hurt your feelings by saying "my grandmother
 encrypts better than you"? I've got you covered! With this port of the amazing
-1940's technology you'll be just as good at encrypting things as anyone's 
+1940's technology you'll be just as good at encrypting things as anyone's
 grandmother.
 
 ### Usage
 
-This repository contains both the CLI tool and its underlying library written in Go. 
+This repository contains both the CLI tool and its underlying library written in Go.
 The library is documented on [GoDoc](https://godoc.org/github.com/emedvedev/enigma).
 
-As for the CLI tool, a simple `go install` should do it:
+As for the CLI tool, a simple `go get` should do it:
 
 ```
-go install github.com/emedvedev/enigma/cmd/enigma
+go get github.com/emedvedev/enigma/cmd/enigma
 ```
 
-While the full CLI syntax is a bit verbose, it's actually possible to use the tool 
+While the full CLI syntax is a bit verbose, it's actually possible to use the tool
 without any source code modifications, config files, or Enigma knowledge:
 
 ```
@@ -37,8 +37,8 @@ Much better! And of course, `enigma -h` will give you the complete description o
 parameters and usage.
 
 Importantly, since Enigma machines only have 26 keys, spaces are replaced with `X`,
-and everything outside of the English alphabet is discarded. It's up to you to 
-come up with a suitable encoding. 
+and everything outside of the English alphabet is discarded. It's up to you to
+come up with a suitable encoding.
 
 Enjoy!
 
