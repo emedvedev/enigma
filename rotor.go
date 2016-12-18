@@ -4,8 +4,8 @@ package enigma
 // the Enigma machine. Rotors can be put in different positions,
 // swapped, and replaced; they are also rotated during the encoding
 // process, following the machine configuration. As a result, there
-// are billions of possible combinations, making brute-forcing attacks
-// on Enigma unfeasible.
+// are millions of possible combinations, making brute-forcing attacks
+// on Enigma unfeasible (and even more so when the plugboard is used).
 type Rotor struct {
 	ID          string
 	StraightSeq [26]int
@@ -22,14 +22,19 @@ func NewRotor(mapping string, id string, turnovers string) *Rotor {
 	r := &Rotor{ID: id, Offset: 0, Ring: 0}
 	r.Turnover = make([]int, len(turnovers))
 	for i := range turnovers {
-		r.Turnover[i] = ToInt(turnovers[i])
+		r.Turnover[i] = CharToIndex(turnovers[i])
 	}
-	for i, value := range mapping {
-		intvalue := ToInt(byte(value))
-		r.StraightSeq[i] = intvalue
-		r.ReverseSeq[intvalue] = i
+	for i, letter := range mapping {
+		index := CharToIndex(byte(letter))
+		r.StraightSeq[i] = index
+		r.ReverseSeq[index] = i
 	}
 	return r
+}
+
+// Move the rotor, shifting the offset by a given number.
+func (r *Rotor) move(offset int) {
+	r.Offset = (r.Offset + offset) % 26
 }
 
 // ShouldTurnOver checks if the current rotor position corresponds
@@ -41,11 +46,6 @@ func (r *Rotor) ShouldTurnOver() bool {
 		}
 	}
 	return false
-}
-
-// Move the rotor, shifting the offset by a given number.
-func (r *Rotor) move(offset int) {
-	r.Offset = (r.Offset + offset) % 26
 }
 
 // Step through the rotor, performing the letter substitution depending

@@ -13,7 +13,7 @@ type Reflector struct {
 func NewReflector(mapping string, id string) *Reflector {
 	var seq [26]int
 	for i, value := range mapping {
-		seq[i] = ToInt(byte(value))
+		seq[i] = CharToIndex(byte(value))
 	}
 	return &Reflector{id, seq}
 }

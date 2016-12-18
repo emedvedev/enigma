@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-// ToInt returns the alphabet index of a given letter.
-func ToInt(char byte) int {
+// CharToIndex returns the alphabet index of a given letter.
+func CharToIndex(char byte) int {
 	return int(char - 'A')
 }
 
-// ToChar returns the letter with a given alphabet index.
-func ToChar(index int) byte {
+// IndexToChar returns the letter with a given alphabet index.
+func IndexToChar(index int) byte {
 	return byte('A' + index)
 }
 

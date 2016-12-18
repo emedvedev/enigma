@@ -2,7 +2,7 @@ package enigma
 
 // HistoricRotors match the original Enigma configurations, including the
 // notches. "Beta" and "Gamma" are additional rotors used in M4
-// at the 4th position.
+// at the leftmost position.
 var HistoricRotors = Rotors{
 	NewRotor("EKMFLGDQVZNTOWYHXUSPAIBRCJ", "I", "Q"),
 	NewRotor("AJDKSIRUXBLHWTMCQGZNPYFVOE", "II", "E"),

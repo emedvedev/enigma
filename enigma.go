@@ -83,7 +83,7 @@ func NewEnigma(rotorConfiguration []RotorConfig, refID string, plugs []string) *
 	rotors := make(Rotors, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
 		rotors[i] = HistoricRotors.GetByID(configuration.ID)
-		rotors[i].Offset = ToInt(configuration.Start)
+		rotors[i].Offset = CharToIndex(configuration.Start)
 		rotors[i].Ring = configuration.Ring - 1
 	}
 	return &Enigma{*HistoricReflectors.GetByID(refID), *NewPlugboard(plugs), rotors}
@@ -96,12 +96,13 @@ func (e *Enigma) moveRotors() {
 		farRightTurnover    = farRight.ShouldTurnOver()
 		secondRight         = e.Rotors[rotorLen-2]
 		secondRightTurnover = secondRight.ShouldTurnOver()
+		thirdRight          = e.Rotors[rotorLen-3]
 	)
 	if secondRightTurnover {
 		if !farRightTurnover {
 			secondRight.move(1)
 		}
-		(e.Rotors[rotorLen-3]).move(1)
+		thirdRight.move(1)
 	}
 	if farRightTurnover {
 		secondRight.move(1)
@@ -110,26 +111,26 @@ func (e *Enigma) moveRotors() {
 }
 
 // EncodeChar encodes a single character.
-func (e *Enigma) EncodeChar(letterByte byte) byte {
+func (e *Enigma) EncodeChar(letter byte) byte {
 	e.moveRotors()
 
-	letter := ToInt(letterByte)
-	letter = e.Plugboard[letter]
+	letterIndex := CharToIndex(letter)
+	letterIndex = e.Plugboard[letterIndex]
 
 	for i := len(e.Rotors) - 1; i >= 0; i-- {
-		e.Rotors[i].Step(&letter, false)
+		e.Rotors[i].Step(&letterIndex, false)
 	}
 
-	letter = e.Reflector.Sequence[letter]
+	letterIndex = e.Reflector.Sequence[letterIndex]
 
 	for i := 0; i < len(e.Rotors); i++ {
-		e.Rotors[i].Step(&letter, true)
+		e.Rotors[i].Step(&letterIndex, true)
 	}
 
-	letter = e.Plugboard[letter]
-	letterByte = ToChar(letter)
+	letterIndex = e.Plugboard[letterIndex]
+	letter = IndexToChar(letterIndex)
 
-	return letterByte
+	return letter
 }
 
 // EncodeString encodes a string.

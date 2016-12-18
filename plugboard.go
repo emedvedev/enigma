@@ -13,8 +13,8 @@ func NewPlugboard(pairs []string) *Plugboard {
 	}
 	for _, pair := range pairs {
 		if len(pair) > 0 {
-			var intFirst = ToInt(pair[0])
-			var intSecond = ToInt(pair[1])
+			var intFirst = CharToIndex(pair[0])
+			var intSecond = CharToIndex(pair[1])
 			p[intFirst] = intSecond
 			p[intSecond] = intFirst
 		}
