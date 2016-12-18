@@ -58,12 +58,23 @@
 // spare time. Your pull requests would be most welcome!
 package enigma
 
+import "bytes"
+
 // Enigma represents an Enigma machine with configured rotors, plugs,
 // and a reflector. Most states are stored in the rotors themselves.
 type Enigma struct {
 	Reflector Reflector
 	Plugboard Plugboard
 	Rotors    Rotors
+}
+
+// RotorConfig reprensents a configuration for a rotor as set by the user:
+// ID from the pre-defined list, a starting position (A to Z), and a ring
+// setting (1 to 26).
+type RotorConfig struct {
+	ID    string
+	Start byte
+	Ring  int
 }
 
 // NewEnigma is the Enigma constructor, accepting an array of RotorConfig objects
@@ -78,73 +89,54 @@ func NewEnigma(rotorConfiguration []RotorConfig, refID string, plugs []string) *
 	return &Enigma{*HistoricReflectors.GetByID(refID), *NewPlugboard(plugs), rotors}
 }
 
-// Plugboard is a two-way mapping between characters modifying the
-// encryption/decryption procedure of the Enigma machine.
-type Plugboard map[byte]byte
-
-// NewPlugboard is the plugboard constructor accepting an array
-// of two-symbol strings representing plug pairs.
-func NewPlugboard(pairs []string) *Plugboard {
-	p := Plugboard{}
-	for _, pair := range pairs {
-		if len(pair) > 0 {
-			p[pair[0]] = pair[1]
-			p[pair[1]] = pair[0]
-		}
-	}
-	return &p
-}
-
-func (r *Rotor) move(offset int) {
-	r.Offset = (r.Offset + offset + 26) % 26
-}
-
 func (e *Enigma) moveRotors() {
 	var (
-		rotorLen           = len(e.Rotors)
-		farRight           = e.Rotors[rotorLen-1]
-		farRightAtNotch    = farRight.IsAtNotch()
-		secondRight        = e.Rotors[rotorLen-2]
-		secondRightAtNotch = secondRight.IsAtNotch()
+		rotorLen            = len(e.Rotors)
+		farRight            = e.Rotors[rotorLen-1]
+		farRightTurnover    = farRight.ShouldTurnOver()
+		secondRight         = e.Rotors[rotorLen-2]
+		secondRightTurnover = secondRight.ShouldTurnOver()
 	)
-	if secondRightAtNotch {
-		if !farRightAtNotch {
+	if secondRightTurnover {
+		if !farRightTurnover {
 			secondRight.move(1)
 		}
 		(e.Rotors[rotorLen-3]).move(1)
 	}
-	if farRightAtNotch {
+	if farRightTurnover {
 		secondRight.move(1)
 	}
 	farRight.move(1)
 }
 
-// EncryptChar inputs a single character into the machine.
-func (e *Enigma) EncryptChar(letter byte) byte {
+// EncodeChar encodes a single character.
+func (e *Enigma) EncodeChar(letterByte byte) byte {
 	e.moveRotors()
-	if value, ok := e.Plugboard[letter]; ok {
-		letter = value
-	}
-	l := ToInt(letter)
+
+	letter := ToInt(letterByte)
+	letter = e.Plugboard[letter]
+
 	for i := len(e.Rotors) - 1; i >= 0; i-- {
-		e.Rotors[i].Step(&l, false)
+		e.Rotors[i].Step(&letter, false)
 	}
-	l = e.Reflector.Reflect(l)
+
+	letter = e.Reflector.Sequence[letter]
+
 	for i := 0; i < len(e.Rotors); i++ {
-		e.Rotors[i].Step(&l, true)
+		e.Rotors[i].Step(&letter, true)
 	}
-	letter = ToChar(l)
-	if value, ok := e.Plugboard[letter]; ok {
-		letter = value
-	}
-	return letter
+
+	letter = e.Plugboard[letter]
+	letterByte = ToChar(letter)
+
+	return letterByte
 }
 
-// EncryptString inputs a string into the machine.
-func (e *Enigma) EncryptString(text string) string {
-	encrypted := make([]byte, len(text))
-	for i, v := range text {
-		encrypted[i] = e.EncryptChar(byte(v))
+// EncodeString encodes a string.
+func (e *Enigma) EncodeString(text string) string {
+	var result bytes.Buffer
+	for i := range text {
+		result.WriteByte(e.EncodeChar(text[i]))
 	}
-	return string(encrypted)
+	return result.String()
 }

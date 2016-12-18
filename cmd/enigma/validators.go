@@ -9,6 +9,28 @@ import (
 	"github.com/mkideal/cli"
 )
 
+// Validate runs checks on all available Enigma parameters.
+// The defaults are loaded before validation: some of the parameter
+// combinations that a user might supply won't work with the defaults,
+// so we have to combine first, then check the final form.
+func (argv *CLIOpts) Validate(ctx *cli.Context) error {
+	SetDefaults(argv)
+	validators := [](func(argv *CLIOpts, ctx *cli.Context) error){
+		ValidatePlugboard,
+		ValidateRotors,
+		ValidateReflector,
+		ValidatePosition,
+		ValidateRings,
+		ValidateUniformity,
+	}
+	for _, validator := range validators {
+		if err := validator(argv, ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ValidatePlugboard checks that all plugboard pairs are formatted correctly,
 // and letters in pairs do not repeat.
 func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
@@ -33,7 +55,7 @@ func ValidatePlugboard(argv *CLIOpts, ctx *cli.Context) error {
 // in the pre-defined list.
 func ValidateRotors(argv *CLIOpts, ctx *cli.Context) error {
 	for _, rotor := range argv.Rotors {
-		if _, ok := enigma.Rotors[rotor]; !ok {
+		if r := enigma.HistoricRotors.GetByID(rotor); r == nil {
 			return fmt.Errorf(`unknown rotor "%s"`, ctx.Color().Yellow(rotor))
 		}
 	}
@@ -43,7 +65,7 @@ func ValidateRotors(argv *CLIOpts, ctx *cli.Context) error {
 // ValidateReflector checks that the requested reflector is present
 // in the pre-defined list.
 func ValidateReflector(argv *CLIOpts, ctx *cli.Context) error {
-	if _, ok := enigma.Reflectors[argv.Reflector]; !ok {
+	if r := enigma.HistoricReflectors.GetByID(argv.Reflector); r == nil {
 		return fmt.Errorf(`unknown reflector "%s"`, ctx.Color().Yellow(argv.Reflector))
 	}
 	return nil
