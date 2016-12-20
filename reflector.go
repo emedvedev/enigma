@@ -19,14 +19,14 @@ func NewReflector(mapping string, id string) *Reflector {
 }
 
 // Reflectors is a simple list of reflector pointers.
-type Reflectors []*Reflector
+type Reflectors []Reflector
 
 // GetByID takes a "name" of the reflector (e.g. "B") and returns the
 // Reflector pointer.
 func (refs *Reflectors) GetByID(id string) *Reflector {
 	for _, ref := range *refs {
 		if ref.ID == id {
-			return ref
+			return &ref
 		}
 	}
 	return nil

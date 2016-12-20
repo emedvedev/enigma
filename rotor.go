@@ -50,27 +50,26 @@ func (r *Rotor) ShouldTurnOver() bool {
 
 // Step through the rotor, performing the letter substitution depending
 // on the offset and direction.
-func (r *Rotor) Step(letter *int, invert bool) {
-	l := *letter
-	l = (l - r.Ring + r.Offset + 26) % 26
+func (r *Rotor) Step(letter int, invert bool) int {
+	letter = (letter - r.Ring + r.Offset + 26) % 26
 	if invert {
-		l = r.ReverseSeq[l]
+		letter = r.ReverseSeq[letter]
 	} else {
-		l = r.StraightSeq[l]
+		letter = r.StraightSeq[letter]
 	}
-	l = (l + r.Ring - r.Offset + 26) % 26
-	*letter = l
+	letter = (letter + r.Ring - r.Offset + 26) % 26
+	return letter
 }
 
 // Rotors is a simple list of rotor pointers.
-type Rotors []*Rotor
+type Rotors []Rotor
 
 // GetByID takes a "name" of the rotor (e.g. "III") and returns the
 // Rotor pointer.
 func (rs *Rotors) GetByID(id string) *Rotor {
 	for _, rotor := range *rs {
 		if rotor.ID == id {
-			return rotor
+			return &rotor
 		}
 	}
 	return nil

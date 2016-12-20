@@ -82,7 +82,7 @@ type RotorConfig struct {
 func NewEnigma(rotorConfiguration []RotorConfig, refID string, plugs []string) *Enigma {
 	rotors := make(Rotors, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
-		rotors[i] = HistoricRotors.GetByID(configuration.ID)
+		rotors[i] = *HistoricRotors.GetByID(configuration.ID)
 		rotors[i].Offset = CharToIndex(configuration.Start)
 		rotors[i].Ring = configuration.Ring - 1
 	}
@@ -118,13 +118,13 @@ func (e *Enigma) EncodeChar(letter byte) byte {
 	letterIndex = e.Plugboard[letterIndex]
 
 	for i := len(e.Rotors) - 1; i >= 0; i-- {
-		e.Rotors[i].Step(&letterIndex, false)
+		letterIndex = e.Rotors[i].Step(letterIndex, false)
 	}
 
 	letterIndex = e.Reflector.Sequence[letterIndex]
 
 	for i := 0; i < len(e.Rotors); i++ {
-		e.Rotors[i].Step(&letterIndex, true)
+		letterIndex = e.Rotors[i].Step(letterIndex, true)
 	}
 
 	letterIndex = e.Plugboard[letterIndex]
