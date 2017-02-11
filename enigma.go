@@ -65,7 +65,7 @@ import "bytes"
 type Enigma struct {
 	Reflector Reflector
 	Plugboard Plugboard
-	Rotors    Rotors
+	Rotors    []*Rotor
 }
 
 // RotorConfig reprensents a configuration for a rotor as set by the user:
@@ -80,9 +80,9 @@ type RotorConfig struct {
 // NewEnigma is the Enigma constructor, accepting an array of RotorConfig objects
 // for rotors, a reflector ID/name, and an array of plugboard pairs.
 func NewEnigma(rotorConfiguration []RotorConfig, refID string, plugs []string) *Enigma {
-	rotors := make(Rotors, len(rotorConfiguration))
+	rotors := make([]*Rotor, len(rotorConfiguration))
 	for i, configuration := range rotorConfiguration {
-		rotors[i] = *HistoricRotors.GetByID(configuration.ID)
+		rotors[i] = HistoricRotors.GetByID(configuration.ID)
 		rotors[i].Offset = CharToIndex(configuration.Start)
 		rotors[i].Ring = configuration.Ring - 1
 	}
